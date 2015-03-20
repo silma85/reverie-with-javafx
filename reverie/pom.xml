@@ -40,8 +40,11 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+			       <classpathContainers>
+			          <classpathContainer>
+			   org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8
+			          </classpathContainer>
+			       </classpathContainers>
 				</configuration>
 			</plugin>
 		</plugins>
