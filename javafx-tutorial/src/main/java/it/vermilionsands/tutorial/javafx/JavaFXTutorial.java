@@ -3,26 +3,58 @@ package it.vermilionsands.tutorial.javafx;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.image.Image;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JavaFXTutorial extends Application {
 
+  private static final Logger log = LoggerFactory.getLogger(JavaFXTutorial.class);
+
   @Override
-  public void start(Stage primaryStage) {
+  public void start(final Stage primaryStage) {
     try {
-      // Create a root
-      BorderPane root = (BorderPane) FXMLLoader.load(getClass().getResource("MainPane.fxml"));
+      VBox root = (VBox) FXMLLoader.load(getClass().getResource("MainPane.fxml"));
+
+      // Button btnNuke = new Button();
+      // btnNuke.setId("shiny-orange");
+      // btnNuke.setText("Nuke Moscow");
+      // btnNuke.setOnAction(new EventHandler<ActionEvent>() {
+      //
+      // @Override
+      // public void handle(ActionEvent event) {
+      // log.info("You genocidal monster! Millions die...");
+      // }
+      // });
+      //
+      // Button btnExit = new Button();
+      // btnExit.setText("Out of here");
+      // btnExit.setOnAction(new EventHandler<ActionEvent>() {
+      //
+      // @Override
+      // public void handle(ActionEvent event) {
+      // primaryStage.close();
+      // }
+      // });
+      //
+      // root.getChildren().add(btnNuke);
+      // root.getChildren().add(btnExit);
 
       // Create a Scene
-      Scene scene = new Scene(root, 400, 400);
-      scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+      Scene scene = new Scene(root);
+      scene.getStylesheets().add(getClass().getResource("/application.css").toExternalForm());
 
       // Set the scene on the primary stage
+      primaryStage.setResizable(false);
+      primaryStage.getIcons().add(new Image("icons/nuclear.png"));
+      primaryStage.setTitle("Nuclear Launch Detected");
       primaryStage.setScene(scene);
       primaryStage.show();
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Error initializing the Scene graph", e);
     }
   }
 
