@@ -35,6 +35,7 @@ public enum Constants {
   public static final String ITEM_LOOK_SUFFIX = ".look";
   public static final String ITEM_NOPICKUP_SUFFIX = ".nopickup";
   public static final String ITEM_ALL_KEY = ITEM_PREFIX + ".all";
+  public static final String ITEM_KEYWORDS_SUFFIX = ".keywords";
 
   public static final String SEPARATOR = ";";
   public static final String SEPARATOR_OPTION = Pattern.quote("|");

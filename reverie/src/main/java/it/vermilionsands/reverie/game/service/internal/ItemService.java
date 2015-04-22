@@ -49,11 +49,16 @@ public class ItemService {
       Item item = new Item();
       item.setCode(code);
       item.setDescription(messages.get(itemRootKey + Constants.ITEM_DESCRIPTION_SUFFIX));
+      item.setKeywords(messages.get(itemRootKey + Constants.ITEM_KEYWORDS_SUFFIX));
 
       // If has a no pickup description, it's not pickupable.
       final String nopickup = messages.get(itemRootKey + Constants.ITEM_NOPICKUP_SUFFIX);
       item.setPickupable(StringUtils.isEmpty(nopickup));
+
+      items.add(item);
     }
+
+    itemRepository.save(items);
 
     return true;
   }
