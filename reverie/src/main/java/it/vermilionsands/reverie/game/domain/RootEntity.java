@@ -20,7 +20,7 @@ import lombok.Data;
  */
 @MappedSuperclass
 @Data
-public abstract class AbstractEntity implements Serializable {
+public abstract class RootEntity implements Serializable {
 
   private static final long serialVersionUID = -4686897082565174317L;
 

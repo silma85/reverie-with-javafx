@@ -1,11 +1,12 @@
 /**
  * 
  */
-package it.vermilionsands.reverie.service;
+package it.vermilionsands.reverie.game.service.internal;
 
 import it.vermilionsands.reverie.game.Randomizer;
 import it.vermilionsands.reverie.game.domain.PlayerCharacter;
-import it.vermilionsands.reverie.game.domain.PlayerCharacter.Sexes;
+import it.vermilionsands.reverie.game.domain.Sexes;
+import it.vermilionsands.reverie.game.repository.PlayerCharacterRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,14 +21,22 @@ public class PlayerCharacterService {
   @Autowired
   private Randomizer randomizer;
 
-  public PlayerCharacter createPC(String name) {
+  @Autowired
+  private PlayerCharacterRepository pcRepository;
+
+  public PlayerCharacter createPC() {
 
     PlayerCharacter pc = new PlayerCharacter();
-    pc.setName(name);
+    pc.setName(randomizer.rollName());
     pc.setLuck(0);
     pc.setSex(Sexes.values()[randomizer.roll(2)]);
+
+    pc = pcRepository.save(pc);
 
     return pc;
   }
 
+  public String doPcAction(String command, String item) {
+    return "";
+  }
 }

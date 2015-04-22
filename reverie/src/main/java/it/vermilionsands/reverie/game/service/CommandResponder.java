@@ -1,7 +1,7 @@
 /**
  * 
  */
-package it.vermilionsands.reverie.game.worker;
+package it.vermilionsands.reverie.game.service;
 
 import it.vermilionsands.reverie.game.Randomizer;
 import javafx.scene.control.TextArea;
@@ -25,7 +25,7 @@ public class CommandResponder {
   @Autowired
   private CommandMatcher commandMatcher;
 
-  private TextArea receiver;
+  private TextArea commandReceiver;
 
   private TextField commander;
 
@@ -38,7 +38,7 @@ public class CommandResponder {
 
     String response = commandMatcher.match(command);
 
-    receiver.setText(response);
+    commandReceiver.setText(response);
     commander.clear();
   }
 

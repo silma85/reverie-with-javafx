@@ -1,7 +1,6 @@
 package it.vermilionsands.reverie.gui;
 
-import it.vermilionsands.reverie.configuration.Messages;
-import it.vermilionsands.reverie.game.worker.CommandResponder;
+import it.vermilionsands.reverie.game.service.CommandResponder;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -26,14 +25,14 @@ public class MainPaneController {
   @Autowired
   private CommandResponder commandResponder;
 
-  @Autowired
-  private Messages messages;
-
   @PostConstruct
   public void init() {
-    this.adventureText.setText(messages.get("system.debug.message"));
-    this.commandResponder.setReceiver(adventureText);
+    // this.adventureText.setText(messages.get("system.debug.message"));
+
+    this.commandResponder.setCommandReceiver(adventureCommandResponses);
     this.commandResponder.setCommander(adventureCommands);
+
+    this.adventureCommands.requestFocus();
   }
 
   /*
@@ -47,6 +46,9 @@ public class MainPaneController {
 
   @FXML
   private TextField adventureCommands;
+
+  @FXML
+  private TextArea adventureCommandResponses;
 
   @FXML
   private void sayButtonAction(ActionEvent event) {

@@ -19,21 +19,34 @@ public enum Constants {
 
   // Costanti di uso interno
   public static final String ROOM_PREFIX = "rooms";
-  public static final String NSWE_SUFFIX = ".nswe";
-  public static final String NSWE_DESC_SUFFIX = ".nswedesc";
-  public static final String DESCRIPTION_SUFFIX = ".description";
-  public static final String UP_DOWN_SUFFIX = ".ud";
-  public static final String UP_DOWN_DESC_SUFFIX = ".uddesc";
+  public static final String ROOM_NSWE_SUFFIX = ".nswe";
+  public static final String ROOM_NSWE_DESC_SUFFIX = ".nswedesc";
+  public static final String ROOM_DESCRIPTION_SUFFIX = ".description";
+  public static final String ROOM_UD_SUFFIX = ".ud";
+  public static final String ROOM_UD_DESC_SUFFIX = ".uddesc";
+  public static final String ROOM_DIRECTIONS_PREFIX = "rooms.directions";
+  public static final String ROOM_ALL_KEY = ROOM_PREFIX + ".all.blocks";
+  public static final String ROOM_FLIP_SUFFIX = ".flip";
+  public static final String ROOM_ITEM_SUFFIX = ".items";
+
+  public static final String ITEM_PREFIX = "items";
+  public static final String ITEM_DESCRIPTION_SUFFIX = ".description";
+  public static final String ITEM_FLIPPED_SUFFIX = ".description.flipped";
+  public static final String ITEM_LOOK_SUFFIX = ".look";
+  public static final String ITEM_NOPICKUP_SUFFIX = ".nopickup";
+  public static final String ITEM_ALL_KEY = ITEM_PREFIX + ".all";
+
   public static final String SEPARATOR = ";";
   public static final String SEPARATOR_OPTION = Pattern.quote("|");
-  public static final String ALL_BLOCKS_KEY = ROOM_PREFIX + ".all.blocks";
 
   public final static String REVERIE_ICON = "spiral-icon.png";
 
   public final static String COMMAND_ACTION = "command";
-  public final static String COMMAND_REFUSED = "command_refused";
-  public final static String COMMAND_ACCEPTED = "command_accepted";
+  public final static String COMMAND_ACCEPTED = "reverie.gui.command.success.default";
+  public final static String COMMAND_NOT_FOUND = "reverie.gui.command.unfound";
 
-  public final static String CREATURE_PLAYER_NAME_PREFIXES = "";
-  public final static String CREATURE_PLAYER_NAME_SUFFIXES = "";
+  public final static String CREATURE_PLAYER_NAME_PREFIXES = "reverie.creatures.name.prefixes";
+  public final static String CREATURE_PLAYER_NAME_SUFFIXES = "reverie.creatures.name.suffixes";
+
+  public final static String ROOM_DEFAULT = "pillar";
 }

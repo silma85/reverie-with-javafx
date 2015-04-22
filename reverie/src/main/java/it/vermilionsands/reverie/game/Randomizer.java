@@ -4,11 +4,14 @@
 package it.vermilionsands.reverie.game;
 
 import it.vermilionsands.reverie.configuration.Constants;
+import it.vermilionsands.reverie.configuration.Messages;
 
 import java.util.Date;
 import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * Generates randomicity
@@ -20,6 +23,9 @@ import org.springframework.stereotype.Component;
 public class Randomizer {
 
   private Random seed;
+
+  @Autowired
+  private Messages messages;
 
   public int roll() {
 
@@ -59,14 +65,19 @@ public class Randomizer {
     return seed.nextInt(bound) + lower;
   }
 
-  public String rollString(String optionsAll) {
-
+  public String rollString(String optionsAll, Object... args) {
     String[] options = optionsAll.split(Constants.SEPARATOR_OPTION);
 
-    return options[roll(options.length)];
+    for (int i = 0; i < args.length; i++) {
+      args[i] = StringUtils.capitalize(args[i].toString());
+    }
+
+    return String.format(options[roll(options.length)], args);
   }
 
   public String rollName() {
-    return rollString(Constants.CREATURE_PLAYER_NAME_PREFIXES) + rollString(Constants.CREATURE_PLAYER_NAME_SUFFIXES);
+    return rollString(messages.get(Constants.CREATURE_PLAYER_NAME_PREFIXES))
+            + rollString(messages.get(Constants.CREATURE_PLAYER_NAME_SUFFIXES));
   }
+
 }
