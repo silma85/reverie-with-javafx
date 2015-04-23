@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.OneToMany;
 
 import lombok.Data;
@@ -34,7 +35,7 @@ public class PlayerCharacter extends RootEntity {
   @Basic
   private int luck;
 
-  @OneToMany
+  @OneToMany(fetch = FetchType.EAGER)
   private List<Item> items;
 
   public boolean has(final Item item) {

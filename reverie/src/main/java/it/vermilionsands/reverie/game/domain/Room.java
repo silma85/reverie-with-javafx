@@ -8,6 +8,7 @@ import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
@@ -37,7 +38,7 @@ public class Room extends RootEntity {
   @Column(length = 1024)
   private String description;
 
-  @OneToMany
+  @OneToMany(fetch = FetchType.EAGER)
   private List<Item> items;
 
   @OneToOne(optional = true)

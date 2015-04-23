@@ -67,17 +67,12 @@ public class Randomizer {
 
   public String rollString(String optionsAll, Object... args) {
     String[] options = optionsAll.split(Constants.SEPARATOR_OPTION);
-
-    for (int i = 0; i < args.length; i++) {
-      args[i] = StringUtils.capitalize(args[i].toString());
-    }
-
-    return String.format(options[roll(options.length)], args);
+    return StringUtils.capitalize(String.format(options[roll(options.length)], args));
   }
 
   public String rollName() {
     return rollString(messages.get(Constants.CREATURE_PLAYER_NAME_PREFIXES))
-            + rollString(messages.get(Constants.CREATURE_PLAYER_NAME_SUFFIXES));
+            + rollString(messages.get(Constants.CREATURE_PLAYER_NAME_SUFFIXES)).toLowerCase();
   }
 
 }

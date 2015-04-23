@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.input.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.*?>
@@ -8,40 +9,63 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.FlowPane?>
 
-<VBox fx:id="root" prefHeight="288.0" prefWidth="576.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="it.vermilionsands.reverie.gui.MainPaneController">
+<VBox fx:id="root" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="it.vermilionsands.reverie.gui.MainPaneController">
    <children>
-      <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Status line v0.1.BETA">
+      <MenuBar scaleShape="false">
+        <menus>
+          <Menu text="_File">
+            <items>
+              <MenuItem fx:id="fileExit" onAction="#fileExitAction" text="_Esci">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="Q" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator></MenuItem>
+            </items>
+          </Menu>
+          <Menu text="_?">
+            <items>
+              <MenuItem text="Informazioni _su..." />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <Text fx:id="statusText" strokeType="OUTSIDE" strokeWidth="0.0" text="Status line v0.1.BETA">
          <VBox.margin>
-            <Insets bottom="6.0" left="6.0" right="6.0" top="6.0" />
+            <Insets left="6.0" right="6.0" top="6.0" />
          </VBox.margin>
       </Text>
-      <VBox prefHeight="260.0" prefWidth="576.0">
+      <VBox>
          <children>
             <TextArea fx:id="adventureText" editable="false" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="800.0" text="What? Some text here?" wrapText="true">
                <VBox.margin>
-                  <Insets bottom="6.0" left="6.0" right="6.0" top="6.0" />
+                  <Insets top="6.0" />
                </VBox.margin>
             </TextArea>
-            <TextArea fx:id="adventureCommandResponses" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="800.0" text="Command responses here.">
+            <TextArea fx:id="adventureCommandResponses" editable="false" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="800.0" text="Welcome!">
                <VBox.margin>
-                  <Insets bottom="6.0" left="6.0" right="6.0" top="6.0" />
+                  <Insets top="6.0" />
                </VBox.margin>
             </TextArea>
             <HBox alignment="TOP_RIGHT" prefHeight="32.0" prefWidth="600.0">
                <children>
                   <Button defaultButton="true" mnemonicParsing="false" onAction="#sayButtonAction" prefHeight="31.0" prefWidth="89.0" text="Say it!">
                      <HBox.margin>
-                        <Insets bottom="6.0" left="6.0" right="6.0" top="6.0" />
+                        <Insets right="4.0" top="6.0" />
                      </HBox.margin>
                   </Button>
                   <TextField fx:id="adventureCommands" prefHeight="31.0" prefWidth="768.0" promptText="Insert Command here...">
                      <HBox.margin>
-                        <Insets bottom="6.0" left="6.0" right="6.0" top="6.0" />
+                        <Insets left="4.0" top="6.0" />
                      </HBox.margin>
                   </TextField>
                </children>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
             </HBox>
          </children>
+         <VBox.margin>
+            <Insets left="6.0" right="6.0" top="6.0" />
+         </VBox.margin>
       </VBox>
    </children>
 </VBox>

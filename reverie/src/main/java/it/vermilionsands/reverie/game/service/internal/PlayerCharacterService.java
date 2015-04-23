@@ -3,7 +3,9 @@
  */
 package it.vermilionsands.reverie.game.service.internal;
 
+import it.vermilionsands.reverie.configuration.Messages;
 import it.vermilionsands.reverie.game.Randomizer;
+import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.PlayerCharacter;
 import it.vermilionsands.reverie.game.domain.Sexes;
 import it.vermilionsands.reverie.game.repository.PlayerCharacterRepository;
@@ -22,7 +24,13 @@ public class PlayerCharacterService {
   private Randomizer randomizer;
 
   @Autowired
+  private Messages messages;
+
+  @Autowired
   private PlayerCharacterRepository pcRepository;
+
+  @Autowired
+  private ItemService itemService;
 
   public PlayerCharacter createPC() {
 
@@ -38,5 +46,27 @@ public class PlayerCharacterService {
 
   public String doPcAction(String command, String item) {
     return "";
+  }
+
+  public String getInventoryText(final PlayerCharacter pc) {
+
+    if (pc.getItems().isEmpty()) {
+      return randomizer.rollString(messages.get("items.look.pack.empty"));
+    }
+
+    final StringBuffer sb = new StringBuffer(messages.get("items.look.pack"));
+    for (Item item : pc.getItems()) {
+      sb.append("\t" + itemService.getArticledDescription(item) + "\n");
+    }
+
+    return sb.toString();
+  }
+
+  public String getInfoText(PlayerCharacter pc) {
+    return messages.get("reverie.gui.status.player", pc.getName());
+  }
+
+  public PlayerCharacter save(final PlayerCharacter pc) {
+    return pcRepository.save(pc);
   }
 }

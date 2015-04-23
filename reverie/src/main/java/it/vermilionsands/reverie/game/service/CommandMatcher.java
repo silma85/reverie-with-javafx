@@ -7,8 +7,11 @@ import it.vermilionsands.reverie.configuration.Constants;
 import it.vermilionsands.reverie.configuration.Messages;
 import it.vermilionsands.reverie.game.Randomizer;
 import it.vermilionsands.reverie.game.domain.GameState;
+import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.Room;
 import it.vermilionsands.reverie.game.service.internal.GameService;
+import it.vermilionsands.reverie.game.service.internal.ItemService;
+import it.vermilionsands.reverie.game.service.internal.PlayerCharacterService;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * Command matcher
@@ -38,14 +42,20 @@ public class CommandMatcher {
   private Randomizer randomizer;
 
   @Autowired
-  private GameService worker;
+  private GameService gameService;
+
+  @Autowired
+  private ItemService itemService;
+
+  @Autowired
+  private PlayerCharacterService pcService;
 
   @PostConstruct
   public void init() {
-    metaPattern = Pattern.compile(messages.get("reverie.gui.command.list.meta"));
-    directionPattern = Pattern.compile(messages.get("reverie.gui.command.list.directions"));
-    iActionPattern = Pattern.compile(messages.get("reverie.gui.command.list.intransitive"));
-    tActionPattern = Pattern.compile(messages.get("reverie.gui.command.list.transitive"));
+    this.metaPattern = Pattern.compile(messages.get("reverie.gui.command.list.meta"));
+    this.directionPattern = Pattern.compile(messages.get("reverie.gui.command.list.directions"));
+    this.iActionPattern = Pattern.compile(messages.get("reverie.gui.command.list.intransitive"));
+    this.tActionPattern = Pattern.compile(messages.get("reverie.gui.command.list.transitive"));
   }
 
   private Pattern metaPattern;
@@ -80,18 +90,18 @@ public class CommandMatcher {
     final Matcher tActionMatcher = tActionPattern.matcher(command);
 
     final boolean hasAction = tActionMatcher.find();
-    final boolean hasItem = command.length() > tActionMatcher.end(); // Meaning there's more than an action here.
+    final boolean hasItem = hasAction && command.trim().length() > tActionMatcher.end(); // Meaning there's more than an action here.
     if (hasAction && hasItem) {
 
-      String itemKeyword = command.substring(tActionMatcher.end()).trim();
-      if (!worker.checkItemPresent(itemKeyword)) {
+      String itemKeyword = command.substring(tActionMatcher.end()).trim(); // TODO trim articles!
+      if (!gameService.checkItemPresent(itemKeyword)) {
         return randomizer.rollString(messages.get("reverie.gui.command.refused.unfound"), itemKeyword);
       }
 
       return doAsCommand(tActionMatcher.group(), itemKeyword);
 
     } else if (hasAction) {
-      return randomizer.rollString(messages.get("reverie.gui.command.refused.transitive"), command);
+      return randomizer.rollString(messages.get("reverie.gui.command.refused.transitive"), command.trim());
     }
 
     // Possible common errors.
@@ -102,50 +112,45 @@ public class CommandMatcher {
     return randomizer.rollString(messages.get("reverie.gui.command.refused"));
   }
 
-  private String doAsCommand(String command, String item) {
+  private String doAsCommand(String command, String itemKeywords) {
 
     // Get gamestate. Response is context-sensitive...
-    final GameState state = worker.getCurrentState();
+    final GameState state = gameService.getCurrentState();
 
-    // Next room placeholder.
-    Room next = null;
+    final Item item = itemService.findByKeywords(itemKeywords);
+
+    // Validate action.
+    if (!itemService.validateCommand(item, command, state)) {
+      String specificNoFlip = messages.get(item.getTitle() + ".actions." + command + Constants.ITEM_NOFLIP_SUFFIX);
+      return StringUtils.isEmpty(specificNoFlip) ? messages.get(item.getTitle() + Constants.ITEM_NOFLIP_SUFFIX)
+              : specificNoFlip;
+    }
+
+    // Flip if this is a flip-action for this item
+    if (gameService.flipItem(state, item, command)) {
+      return messages.get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX);
+    }
 
     switch (command) {
+    case "prendi":
+    case "raccogli":
+      return gameService.pickupItem(state, item);
+
     case "osserva":
     case "esamina":
     case "guarda":
-    case "apri":
-    case "chiudi":
-    case "spingi":
-    case "tira":
-    case "lancia":
-    case "picchia":
-    case "calcia":
-    case "colpisci":
-    case "raccogli":
-    case "lascia":
-    case "prendi":
-    case "impugna":
-    case "estrai":
-    case "usa":
-    case "sfodera":
-    case "rinfodera":
-    case "lava":
-    case "affila":
-
-      break;
+    case "leggi":
+      return itemService.lookItem(item);
 
     default:
-      break;
+      return messages.get("reverie.gui.command.unfound");
     }
-
-    return "";
   }
 
   private String doAsCommand(String command) {
 
     // Get gamestate. Response is context-sensitive...
-    final GameState state = worker.getCurrentState();
+    final GameState state = gameService.getCurrentState();
 
     // Next room placeholder.
     Room next = null;
@@ -160,7 +165,12 @@ public class CommandMatcher {
 
     case "versione":
     case "v":
-      return String.format("%s v%s", messages.get("reverie.gui.title"), messages.get("reverie.version"));
+      return gameService.getVersion();
+
+    case "inventario":
+    case "i":
+    case "zaino":
+      return pcService.getInventoryText(state.getPlayerCharacter());
 
       // Direction commands
     case "n":
@@ -205,6 +215,9 @@ public class CommandMatcher {
       return "";
     case "siediti":
     case "siedi":
+      return "";
+    case "canta":
+      return randomizer.rollString(messages.get("reverie.creatures.self.sing"));
 
     default:
       log.warn(String.format("Attention: command %s should exist, but was not found in CommandMatcher.doAsCommand!",
@@ -221,7 +234,7 @@ public class CommandMatcher {
    */
   private String advanceRoom(final GameState state, Room next) {
     if (next != null) {
-      worker.advanceRoom(state, next);
+      gameService.advanceRoom(state, next);
       return messages.get(Constants.COMMAND_ACCEPTED);
     } else {
       return messages.get("reverie.gui.command.refused.direction");

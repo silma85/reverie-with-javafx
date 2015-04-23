@@ -4,7 +4,6 @@ import it.vermilionsands.reverie.configuration.Constants;
 import it.vermilionsands.reverie.configuration.Messages;
 import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.Room;
-import it.vermilionsands.reverie.game.repository.ItemRepository;
 import it.vermilionsands.reverie.game.repository.RoomRepository;
 
 import java.io.IOException;
@@ -14,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
@@ -31,7 +31,7 @@ public class RoomService {
   private RoomRepository roomRepository;
 
   @Autowired
-  private ItemRepository itemRepository;
+  private ItemService itemService;
 
   @Autowired
   private Messages messages;
@@ -135,16 +135,34 @@ public class RoomService {
     return split;
   }
 
-  public String getRoomConnectionsText(Room room) {
+  public String getRoomConnectionsText(final Room room) {
 
     final StringBuffer sb = new StringBuffer("\n\n");
 
-    String[] nswePrefixes = messages.get(Constants.ROOM_DIRECTIONS_PREFIX + Constants.ROOM_NSWE_SUFFIX).split(
+    final String[] nswePrefixes = messages.get(Constants.ROOM_DIRECTIONS_PREFIX + Constants.ROOM_NSWE_SUFFIX).split(
             Constants.SEPARATOR);
-    String[] connections = messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX).split(Constants.SEPARATOR);
+    final String[] connections = messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX).split(
+            Constants.SEPARATOR);
 
     for (int i = 0; i < connections.length; i++) {
       sb.append(!StringUtils.isEmpty(connections[i]) ? String.format(connections[i], nswePrefixes[i]) + "\n" : "");
+    }
+
+    sb.append("\n");
+
+    return sb.toString();
+  }
+
+  public String getRoomItemsText(final Room room) {
+
+    if (room.getItems().isEmpty()) {
+      return "";
+    }
+
+    final StringBuffer sb = new StringBuffer(messages.get("items.look.ground"));
+
+    for (Item item : room.getItems()) {
+      sb.append("\t" + itemService.getArticledDescription(item) + "\n");
     }
 
     return sb.toString();
@@ -169,15 +187,27 @@ public class RoomService {
     roomRepository.updateDown(newRoom, oldRoomCode);
   }
 
+  @Transactional
   public void setRoomItems(final Room room) {
-    final String[] items = messages.get(room.getTitle() + Constants.ROOM_ITEM_SUFFIX).split(Constants.SEPARATOR);
 
+    // If this room already has items, don't set the properties-defined items.
+    if (!room.getItems().isEmpty()) {
+      return;
+    }
+
+    final String[] items = messages.get(room.getTitle() + Constants.ROOM_ITEM_SUFFIX).split(Constants.SEPARATOR);
     for (String itemCode : items) {
-      Item item = itemRepository.findByCode(itemCode);
+
+      if (StringUtils.isEmpty(itemCode)) {
+        log.info("No items on room {}, moving on...", room.getTitle());
+        continue;
+      }
+
+      Item item = itemService.findByCode(itemCode);
 
       if (item == null) {
-        log.warn(String.format(
-                "Item %s is present in a room's list, but not in the DB! Check your properties please...", itemCode));
+        log.warn("Item {} is present in {}'s list, but not in the DB! Check your properties please...", itemCode,
+                room.getTitle());
         continue;
       }
 
@@ -185,5 +215,9 @@ public class RoomService {
     }
 
     roomRepository.save(room);
+  }
+
+  public Room save(final Room room) {
+    return roomRepository.save(room);
   }
 }

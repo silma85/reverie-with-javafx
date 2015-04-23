@@ -26,6 +26,9 @@ public class Item extends RootEntity {
   private String keywords;
 
   @Basic
+  private String title;
+
+  @Basic
   private String code;
 
   @Basic
@@ -38,5 +41,5 @@ public class Item extends RootEntity {
   private boolean pickupable = true;
 
   @Basic
-  private Sexes sex;
+  private Sexes gender;
 }
