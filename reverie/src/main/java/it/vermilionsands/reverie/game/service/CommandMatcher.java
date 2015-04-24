@@ -12,6 +12,7 @@ import it.vermilionsands.reverie.game.domain.Room;
 import it.vermilionsands.reverie.game.service.internal.GameService;
 import it.vermilionsands.reverie.game.service.internal.ItemService;
 import it.vermilionsands.reverie.game.service.internal.PlayerCharacterService;
+import it.vermilionsands.reverie.game.service.internal.RoomService;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,6 +49,9 @@ public class CommandMatcher {
   private ItemService itemService;
 
   @Autowired
+  private RoomService roomService;
+
+  @Autowired
   private PlayerCharacterService pcService;
 
   @PostConstruct
@@ -64,6 +68,13 @@ public class CommandMatcher {
   private Pattern tActionPattern;
 
   public String match(String command) {
+
+    // If command is empty, it could be the first room.
+    final GameState state = gameService.getCurrentState();
+    if (Constants.ROOM_DEFAULT.equals(state.getCurrentRoom().getCode())) {
+      final Room room = roomService.findByCode(Constants.ROOM_INITIAL);
+      return this.advanceRoom(state, room);
+    }
 
     // Meta commands
     final Matcher metaMatcher = metaPattern.matcher(command);
@@ -95,18 +106,13 @@ public class CommandMatcher {
 
       String itemKeyword = command.substring(tActionMatcher.end()).trim(); // TODO trim articles!
       if (!gameService.checkItemPresent(itemKeyword)) {
-        return randomizer.rollString(messages.get("reverie.gui.command.refused.unfound"), itemKeyword);
+        return randomizer.rollString(messages.get("items.command.refused.unfound"), itemKeyword);
       }
 
       return doAsCommand(tActionMatcher.group(), itemKeyword);
 
     } else if (hasAction) {
       return randomizer.rollString(messages.get("reverie.gui.command.refused.transitive"), command.trim());
-    }
-
-    // Possible common errors.
-    if (command.split(" ")[0].matches("(are|ere|ire)$")) {
-      return messages.get("reverie.gui.command.refused.infinitive");
     }
 
     return randomizer.rollString(messages.get("reverie.gui.command.refused"));
@@ -118,6 +124,14 @@ public class CommandMatcher {
     final GameState state = gameService.getCurrentState();
 
     final Item item = itemService.findByKeywords(itemKeywords);
+
+    // Return an action- and item-specific description, if any.
+    final String actionSpecificMessage = messages.get(item.getTitle() + ".actions." + command
+            + (item.isFlipped() ? Constants.ITEM_DESCRIPTION_FLIPPED_SUFFIX : Constants.ITEM_DESCRIPTION_SUFFIX));
+    if (!StringUtils.isEmpty(actionSpecificMessage)) {
+      // TODO more complex execution? Or the facilities in flipactions are already enough?
+      return actionSpecificMessage;
+    }
 
     // Validate action.
     if (!itemService.validateCommand(item, command, state)) {
@@ -131,6 +145,7 @@ public class CommandMatcher {
       return messages.get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX);
     }
 
+    // Process more generic actions.
     switch (command) {
     case "prendi":
     case "raccogli":
@@ -139,11 +154,10 @@ public class CommandMatcher {
     case "osserva":
     case "esamina":
     case "guarda":
-    case "leggi":
       return itemService.lookItem(item);
 
     default:
-      return messages.get("reverie.gui.command.unfound");
+      return randomizer.rollString(messages.get("items.command.unfound"), messages.get(item.getTitle()));
     }
   }
 

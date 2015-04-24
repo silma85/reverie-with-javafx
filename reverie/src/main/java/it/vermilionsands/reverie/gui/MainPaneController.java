@@ -1,6 +1,8 @@
 package it.vermilionsands.reverie.gui;
 
+import it.vermilionsands.reverie.configuration.Messages;
 import it.vermilionsands.reverie.game.service.CommandResponder;
+import it.vermilionsands.reverie.game.service.internal.GameService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -8,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Text;
 
 import javax.annotation.PostConstruct;
@@ -27,6 +30,12 @@ public class MainPaneController {
 
   @Autowired
   private CommandResponder commandResponder;
+
+  @Autowired
+  private GameService gameService;
+
+  @Autowired
+  private Messages messages;
 
   @PostConstruct
   public void init() {
@@ -60,12 +69,56 @@ public class MainPaneController {
   private MenuItem fileExit;
 
   @FXML
+  MenuItem debugReloadPatterns;
+
+  @FXML
+  MenuItem debugReloadItems;
+
+  @FXML
   private void sayButtonAction(ActionEvent event) {
+    commandResponder.getHistory().add(adventureCommands.getText());
+    commandResponder.incrementHistoryIndex(1);
+
     commandResponder.respondToCommand(adventureCommands.getText());
+  }
+
+  @FXML
+  private void keyPressedAction(KeyEvent event) {
+
+    switch (event.getCode()) {
+    case UP:
+    case NUMPAD8:
+      commandResponder.incrementHistoryIndex(-1);
+      adventureCommands.setText(commandResponder.getHistory().get(commandResponder.getHistoryIndex()));
+
+      break;
+
+    case DOWN:
+    case NUMPAD2:
+      commandResponder.incrementHistoryIndex(1);
+      adventureCommands.setText(commandResponder.getHistory().get(commandResponder.getHistoryIndex()));
+
+      break;
+
+    default:
+      break;
+    }
   }
 
   @FXML
   public void fileExitAction(ActionEvent event) {
     Platform.exit();
+  }
+
+  @FXML
+  public void reloadPatternAction(ActionEvent event) {
+    commandResponder.getCommandMatcher().init();
+    this.adventureText.setText(messages.get("reverie.gui.debug.reload.actions"));
+  }
+
+  @FXML
+  public void reloadObjectsAction(ActionEvent event) {
+    gameService.init();
+    this.adventureText.setText(messages.get("reverie.gui.debug.reload.objects"));
   }
 }

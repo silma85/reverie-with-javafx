@@ -5,6 +5,7 @@ package it.vermilionsands.reverie.game.service.internal;
 
 import it.vermilionsands.reverie.configuration.Constants;
 import it.vermilionsands.reverie.configuration.Messages;
+import it.vermilionsands.reverie.game.Randomizer;
 import it.vermilionsands.reverie.game.domain.GameState;
 import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.PlayerCharacter;
@@ -37,6 +38,9 @@ public class GameService {
   private static final Logger log = LoggerFactory.getLogger(GameService.class);
 
   @Autowired
+  private Randomizer randomizer;
+
+  @Autowired
   private PlayerCharacterService pcService;
 
   @Autowired
@@ -57,29 +61,33 @@ public class GameService {
   @PostConstruct
   public void init() {
     final PlayerCharacter pc = pcService.createPC();
-    final boolean rooms = roomService.initRooms();
     final boolean items = itemService.initItems();
+    final boolean rooms = roomService.initRooms();
 
     if (rooms && items) {
       // TODO starting items on pc also?
 
-      final GameState state = new GameState();
-      state.setPlayerCharacter(pc);
-
       final Room starting = roomService.getStartingRoom();
 
-      this.advanceRoom(state, starting);
+      final GameState state = new GameState();
+      state.setPlayerCharacter(pc);
+      state.setCurrentRoom(starting);
+      gameRepository.save(state);
+
+      StringBuffer briefing = new StringBuffer();
+      briefing.append(randomizer.rollString(messages.get("reverie.gui.intro.a"), pc.getName()))
+              .append(messages.get("reverie.gui.intro.b"))
+              .append(randomizer.rollString(messages.get("reverie.gui.intro.c")))
+              .append(messages.get("reverie.gui.intro.d")).append(messages.get("reverie.gui.intro.e", pc.getName()));
+
+      controller.getAdventureText().setText(briefing.toString());
+      controller.getAdventureCommandResponses().setText(messages.get("reverie.gui.command.intro"));
+
       this.refreshStatusText();
+
     } else {
       log.error("Fatal. Exiting...");
     }
-  }
-
-  private void refreshStatusText() {
-
-    final GameState state = this.getCurrentState();
-
-    controller.getStatusText().setText(pcService.getInfoText(state.getPlayerCharacter()) + this.getVersion());
   }
 
   public String getVersion() {
@@ -92,17 +100,20 @@ public class GameService {
 
   public void advanceRoom(GameState state, Room next) {
     state.setCurrentRoom(next);
-    roomService.setRoomItems(next);
-
-    refreshRoomText(next);
-
     gameRepository.save(state);
+
+    this.refreshRoomText(next);
+    this.refreshStatusText();
   }
 
-  /**
-   * @param next
-   */
-  public void refreshRoomText(Room next) {
+  private void refreshStatusText() {
+    final GameState state = this.getCurrentState();
+    final String statusText = String.format("%s %s - %s", pcService.getInfoText(state.getPlayerCharacter()),
+            this.getVersion(), messages.get(state.getCurrentRoom().getTitle()));
+    controller.getStatusText().setText(statusText);
+  }
+
+  private void refreshRoomText(Room next) {
     controller.getAdventureText().setText(messages.get(next.getDescription()));
     controller.getAdventureText().appendText(roomService.getRoomConnectionsText(next));
     controller.getAdventureText().appendText(roomService.getRoomItemsText(next));
@@ -125,11 +136,14 @@ public class GameService {
 
     // If it is pickupable and not already in your backpack...
     if (!item.isPickupable()) {
-      return messages.get(item.getTitle() + Constants.ITEM_NOPICKUP_SUFFIX);
+      final String nopickupDesc = messages.get(item.getTitle() + Constants.ITEM_NOPICKUP_SUFFIX);
+      final String nopickup = "default".equals(nopickupDesc) ? randomizer.rollString(
+              messages.get("items.nopickup.default"), messages.get(item.getTitle())) : nopickupDesc;
+      return nopickup;
     }
 
     if (!getCurrentState().getCurrentRoom().has(item)) {
-      return messages.get("items.pickup.already", itemService.getArticledDescription(item));
+      return messages.get("items.pickup.already", messages.get(item.getTitle()));
     }
 
     // Remove the item from the room and put it in the pc's inventory.
@@ -143,7 +157,7 @@ public class GameService {
 
     this.refreshRoomText(room);
 
-    return messages.get("items.pickup", itemService.getArticledDescription(item).toLowerCase());
+    return messages.get("items.pickup", messages.get(item.getTitle()));
   }
 
   // TODO maybe move to itemService?
@@ -160,41 +174,42 @@ public class GameService {
       return false;
     }
 
-    // If item was flipped, return silently.
+    // If item was flipped already, return silently.
     if (item.isFlipped()) {
       return true;
     }
 
     // Else, change item state.
     item.setFlipped(true);
-    item.setDescription(item.getTitle() + Constants.ITEM_FLIPPED_SUFFIX);
+    item.setDescription(item.getTitle() + Constants.ITEM_DESCRIPTION_FLIPPED_SUFFIX);
     item = itemService.save(item);
 
-    // Flip rooms and create objects if applicable.
+    // Do consequences if applicable.
     Room room = state.getCurrentRoom();
     PlayerCharacter pc = state.getPlayerCharacter();
 
-    final String flippedRooms = messages.get(item.getTitle() + ".flip.rooms");
-    if (!StringUtils.isEmpty(flippedRooms)) {
-      // TODO do post-flip actions...
+    for (Item itemRemoved : itemService.listByCodes(item.getTitle() + ".flip.remove")) {
+      room.getItems().remove(itemRemoved);
+      pc.getItems().remove(itemRemoved);
     }
 
-    final String createItemsRoom = messages.get(item.getTitle() + ".flip.create.room");
-    if (!StringUtils.isEmpty(createItemsRoom)) {
-      for (String itemCode : createItemsRoom.split(Constants.SEPARATOR)) {
-        final Item itemAdded = itemService.findByCode(itemCode);
-        room.getItems().add(itemAdded);
-        roomService.save(room);
-      }
+    for (Room roomFlipped : roomService.listByCodes(item.getTitle() + ".flip.rooms")) {
+      roomService.flipRoom(roomFlipped.getCode());
     }
 
-    final String createItemsInv = messages.get(item.getTitle() + ".flip.create.player");
-    if (!StringUtils.isEmpty(createItemsInv)) {
-      for (String itemCode : createItemsInv.split(Constants.SEPARATOR)) {
-        final Item itemAdded = itemService.findByCode(itemCode);
-        pc.getItems().add(itemAdded);
-        pcService.save(pc);
-      }
+    for (Item itemAdded : itemService.listByCodes(item.getTitle() + ".flip.create.room")) {
+      room.getItems().add(itemAdded);
+      roomService.save(room);
+    }
+
+    for (Item itemAdded : itemService.listByCodes(item.getTitle() + ".flip.create.player")) {
+      pc.getItems().add(itemAdded);
+      pcService.save(pc);
+    }
+
+    for (Item itemFlipped : itemService.listByCodes(item.getTitle() + ".flip.items")) {
+      // Let's not create recursive chains...
+      this.flipItem(state, itemFlipped, command);
     }
 
     return true;

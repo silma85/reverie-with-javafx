@@ -65,6 +65,14 @@ public class Randomizer {
     return seed.nextInt(bound) + lower;
   }
 
+  /**
+   * Randomize among string and set parameters via format options. Parameters are inserted as-is (that is, resolve your
+   * strings before calling rollString()) and the resulting string is capitalized.
+   * 
+   * @param optionsAll
+   * @param args
+   * @return
+   */
   public String rollString(String optionsAll, Object... args) {
     String[] options = optionsAll.split(Constants.SEPARATOR_OPTION);
     return StringUtils.capitalize(String.format(options[roll(options.length)], args));

@@ -3,7 +3,8 @@
  */
 package it.vermilionsands.reverie.game.domain;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -39,7 +40,7 @@ public class Room extends RootEntity {
   private String description;
 
   @OneToMany(fetch = FetchType.EAGER)
-  private List<Item> items;
+  private Set<Item> items = new HashSet<Item>();
 
   @OneToOne(optional = true)
   private Room north;

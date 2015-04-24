@@ -4,8 +4,13 @@
 package it.vermilionsands.reverie.game.service;
 
 import it.vermilionsands.reverie.game.Randomizer;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import lombok.Getter;
 import lombok.Setter;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Setter
+@Getter
 public class CommandResponder {
 
   @Autowired
@@ -28,6 +34,24 @@ public class CommandResponder {
   private TextArea commandReceiver;
 
   private TextField commander;
+
+  private List<String> history = new ArrayList<String>();
+
+  private int historyIndex;
+
+  public int incrementHistoryIndex(final int step) {
+    historyIndex += step;
+
+    if (historyIndex < 0) {
+      historyIndex = 0;
+    }
+
+    if (historyIndex >= history.size()) {
+      historyIndex = history.size() - 1;
+    }
+
+    return historyIndex;
+  }
 
   /**
    * Responds to command and writes to the provided TextArea.

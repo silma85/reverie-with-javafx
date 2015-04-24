@@ -31,7 +31,7 @@ public enum Constants {
 
   public static final String ITEM_PREFIX = "items";
   public static final String ITEM_DESCRIPTION_SUFFIX = ".description";
-  public static final String ITEM_FLIPPED_SUFFIX = ".description.flipped";
+  public static final String ITEM_DESCRIPTION_FLIPPED_SUFFIX = ".description.flipped";
   public static final String ITEM_NOFLIP_SUFFIX = ".noflip";
   public static final String ITEM_FLIP_SUFFIX = ".flip";
   public static final String ITEM_LOOK_SUFFIX = ".look";
@@ -40,6 +40,8 @@ public enum Constants {
   public static final String ITEM_KEYWORDS_SUFFIX = ".keywords";
   public static final String ITEM_GENRE_SUFFIX = ".genre";
   public static final String ITEM_ACTION_SUFFIX = ".actions";
+  public static final String ITEM_AMBIENCE_SUFFIX = ".ambience";
+  public static final String ITEM_AMBIENCE_FLIPPED_SUFFIX = ".ambience.flipped";
 
   public static final String SEPARATOR = ";";
   public static final String SEPARATOR_OPTION = Pattern.quote("|");
@@ -53,5 +55,6 @@ public enum Constants {
   public final static String CREATURE_PLAYER_NAME_PREFIXES = "reverie.creatures.name.prefixes";
   public final static String CREATURE_PLAYER_NAME_SUFFIXES = "reverie.creatures.name.suffixes";
 
-  public final static String ROOM_DEFAULT = "pillar";
+  public final static String ROOM_DEFAULT = "intro";
+  public final static String ROOM_INITIAL = "pillar";
 }

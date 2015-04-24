@@ -3,7 +3,8 @@
  */
 package it.vermilionsands.reverie.game.domain;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
@@ -36,7 +37,7 @@ public class PlayerCharacter extends RootEntity {
   private int luck;
 
   @OneToMany(fetch = FetchType.EAGER)
-  private List<Item> items;
+  private Set<Item> items = new HashSet<Item>();
 
   public boolean has(final Item item) {
     return this.items.contains(item);

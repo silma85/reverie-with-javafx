@@ -12,6 +12,7 @@ import it.vermilionsands.reverie.game.repository.PlayerCharacterRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 /**
  * @author alessandro.putzu
@@ -56,7 +57,7 @@ public class PlayerCharacterService {
 
     final StringBuffer sb = new StringBuffer(messages.get("items.look.pack"));
     for (Item item : pc.getItems()) {
-      sb.append("\t" + itemService.getArticledDescription(item) + "\n");
+      sb.append("\t" + StringUtils.capitalize(messages.get(item.getTitle())) + "\n");
     }
 
     return sb.toString();

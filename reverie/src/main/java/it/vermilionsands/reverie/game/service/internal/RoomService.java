@@ -8,6 +8,7 @@ import it.vermilionsands.reverie.game.repository.RoomRepository;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,9 +53,9 @@ public class RoomService {
     roomRepository.deleteAll();
 
     // Gather room data
-    ArrayList<Room> roomList = new ArrayList<Room>();
+    final ArrayList<Room> roomList = new ArrayList<Room>();
 
-    String[] blocks = messages.get("rooms.all.blocks").split(Constants.SEPARATOR);
+    final String[] blocks = messages.get("rooms.all.blocks").split(Constants.SEPARATOR);
 
     for (String block : blocks) {
       String[] rooms = messages.get(Constants.ROOM_ALL_KEY + "." + block).split(Constants.SEPARATOR);
@@ -78,8 +79,9 @@ public class RoomService {
     }
 
     // Persist rooms
-    Iterable<Room> savedRooms = roomRepository.save(roomList);
-    createRoomConnections(savedRooms);
+    final Iterable<Room> savedRooms = roomRepository.save(roomList);
+    this.createRoomConnections(savedRooms);
+    this.setRoomItems(savedRooms);
 
     return true;
   }
@@ -155,14 +157,13 @@ public class RoomService {
 
   public String getRoomItemsText(final Room room) {
 
-    if (room.getItems().isEmpty()) {
-      return "";
-    }
-
-    final StringBuffer sb = new StringBuffer(messages.get("items.look.ground"));
+    final StringBuffer sb = new StringBuffer();
 
     for (Item item : room.getItems()) {
-      sb.append("\t" + itemService.getArticledDescription(item) + "\n");
+      final String key = item.isFlipped() ? item.getTitle() + Constants.ITEM_AMBIENCE_FLIPPED_SUFFIX : item.getTitle()
+              + Constants.ITEM_AMBIENCE_SUFFIX;
+      final String ambience = StringUtils.isEmpty(messages.get(key)) ? "" : messages.get(key) + "\n";
+      sb.append(ambience);
     }
 
     return sb.toString();
@@ -188,36 +189,51 @@ public class RoomService {
   }
 
   @Transactional
-  public void setRoomItems(final Room room) {
+  private void setRoomItems(final Iterable<Room> rooms) {
 
-    // If this room already has items, don't set the properties-defined items.
-    if (!room.getItems().isEmpty()) {
-      return;
-    }
+    for (Room room : rooms) {
+      final String[] items = messages.get(room.getTitle() + Constants.ROOM_ITEM_SUFFIX).split(Constants.SEPARATOR);
+      for (String itemCode : items) {
 
-    final String[] items = messages.get(room.getTitle() + Constants.ROOM_ITEM_SUFFIX).split(Constants.SEPARATOR);
-    for (String itemCode : items) {
+        if (StringUtils.isEmpty(itemCode)) {
+          log.info("No items on room {}, moving on...", room.getTitle());
+          continue;
+        }
 
-      if (StringUtils.isEmpty(itemCode)) {
-        log.info("No items on room {}, moving on...", room.getTitle());
-        continue;
+        Item item = itemService.findByCode(itemCode);
+
+        if (item == null) {
+          log.warn("Item {} is present in {}'s list, but not in the DB! Check your properties please...", itemCode,
+                  room.getTitle());
+          continue;
+        }
+
+        room.getItems().add(item);
       }
 
-      Item item = itemService.findByCode(itemCode);
-
-      if (item == null) {
-        log.warn("Item {} is present in {}'s list, but not in the DB! Check your properties please...", itemCode,
-                room.getTitle());
-        continue;
-      }
-
-      room.getItems().add(item);
+      this.save(room);
     }
-
-    roomRepository.save(room);
   }
 
   public Room save(final Room room) {
     return roomRepository.save(room);
+  }
+
+  public Room findByCode(final String code) {
+    return roomRepository.findByCode(code);
+  }
+
+  public List<Room> listByCodes(final String codes) {
+    List<Room> rooms = new ArrayList<Room>();
+
+    final String roomCodes = messages.get(codes);
+    if (!StringUtils.isEmpty(roomCodes)) {
+      for (String roomCode : roomCodes.split(Constants.SEPARATOR)) {
+        final Room room = roomRepository.findByCode(roomCode);
+        rooms.add(room);
+      }
+    }
+
+    return rooms;
   }
 }
