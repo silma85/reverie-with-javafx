@@ -172,7 +172,11 @@ public class CommandMatcher {
     case "raccogli":
       return gameService.pickupItem(item);
 
-      // Not direction commands, but related to
+    case "lascia":
+    case "butta":
+      return gameService.dropItem(item);
+
+    // Not direction commands, but related to
     case "sali":
     case "entra":
       final String toRoom = messages.get(String.format("%s.actions.%s.toroom", item.getTitle(), command));

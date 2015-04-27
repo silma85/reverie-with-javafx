@@ -39,4 +39,7 @@ public class Item extends RootEntity {
 
   @Basic
   private boolean pickupable = true;
+
+  @Basic
+  private boolean tangible = true;
 }

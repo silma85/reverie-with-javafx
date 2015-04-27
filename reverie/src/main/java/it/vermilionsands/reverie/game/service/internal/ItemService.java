@@ -71,6 +71,8 @@ public class ItemService {
       // If has a no pickup description, it's not pickupable.
       item.setPickupable(StringUtils.isEmpty(messages.get(itemRootKey + Constants.ITEM_NOPICKUP_SUFFIX)));
 
+      item.setTangible(StringUtils.isEmpty(messages.get(itemRootKey + Constants.ITEM_TANGIBLE_SUFFIX)));
+
       log.info("Adding item {}...", item);
 
       items.add(item);

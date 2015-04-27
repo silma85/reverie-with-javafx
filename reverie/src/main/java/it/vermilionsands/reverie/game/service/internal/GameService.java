@@ -79,7 +79,7 @@ public class GameService {
       briefing.append(randomizer.rollString(messages.get("reverie.gui.intro.a"), pc.getName()))
               .append(messages.get("reverie.gui.intro.b"))
               .append(randomizer.rollString(messages.get("reverie.gui.intro.c")))
-              .append(messages.get("reverie.gui.intro.d")).append(messages.get("reverie.gui.intro.e", pc.getName()));
+              .append(messages.get("reverie.gui.intro.d"));
 
       controller.getAdventureText().setText(briefing.toString());
       controller.getAdventureCommandResponses().setText(messages.get("reverie.gui.command.intro"));
@@ -168,7 +168,7 @@ public class GameService {
     final String block = next.getTitle().substring(0, next.getTitle().lastIndexOf("."));
     final String ambienceOptions = messages.get(block + ".ambience");
     if (!StringUtils.isEmpty(ambienceOptions) && randomizer.roll(0, 160) > 140) {
-      controller.getAdventureText().appendText(randomizer.rollString(ambienceOptions));
+      controller.getAdventureCommandResponses().appendText(randomizer.rollString(ambienceOptions));
     }
   }
 
@@ -187,7 +187,7 @@ public class GameService {
   public String pickupItem(final Item item) {
 
     // If it is pickupable and not already in your backpack...
-    if (!item.isPickupable()) {
+    if (!item.isPickupable() || !item.isTangible()) {
       final String nopickupDesc = messages.get(item.getTitle() + Constants.ITEM_NOPICKUP_SUFFIX);
       final String nopickup = "default".equals(nopickupDesc) ? randomizer.rollString(
               messages.get("items.nopickup.default"), messages.get(item.getTitle())) : nopickupDesc;
@@ -196,6 +196,7 @@ public class GameService {
 
     final GameState state = this.getCurrentState();
 
+    // This works because if we're here, the item is either in the room or our pack.
     if (!state.getCurrentRoom().has(item)) {
       return messages.get("items.pickup.already", messages.get(item.getTitle()));
     }
@@ -212,6 +213,31 @@ public class GameService {
     this.refreshRoomText(room);
 
     return messages.get("items.pickup", messages.get(item.getTitle()));
+  }
+
+  public String dropItem(final Item item) {
+
+    if (!item.isTangible()) {
+      final String nodropDesc = messages.get(item.getTitle() + Constants.ITEM_NODROP_SUFFIX);
+      final String nodrop = "default".equals(nodropDesc) ? randomizer.rollString(
+              messages.get("items.nopickup.default"), messages.get(item.getTitle())) : nodropDesc;
+      return nodrop;
+    }
+
+    final GameState state = this.getCurrentState();
+
+    // Remove the item from the pc's inventory and put it in the room.
+    final Room room = state.getCurrentRoom();
+    final PlayerCharacter pc = state.getPlayerCharacter();
+    room.getItems().add(item);
+    pc.getItems().remove(item);
+
+    roomService.save(room);
+    pcService.save(pc);
+
+    this.refreshRoomText(room);
+
+    return messages.get("items.drop", messages.get(item.getTitle()));
   }
 
   /**

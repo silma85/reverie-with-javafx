@@ -5,7 +5,6 @@ package it.vermilionsands.reverie.game.service.internal;
 
 import it.vermilionsands.reverie.configuration.Messages;
 import it.vermilionsands.reverie.game.Randomizer;
-import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.PlayerCharacter;
 import it.vermilionsands.reverie.game.domain.Sexes;
 import it.vermilionsands.reverie.game.repository.PlayerCharacterRepository;
@@ -56,9 +55,10 @@ public class PlayerCharacterService {
     }
 
     final StringBuffer sb = new StringBuffer(messages.get("items.look.pack"));
-    for (Item item : pc.getItems()) {
-      sb.append("\t" + StringUtils.capitalize(messages.get(item.getTitle())) + "\n");
-    }
+
+    // Java 8 lambda-expressions. Stream a list of items, filter for tangible items, for each of them do an action (append a string to the stringbuilder in this case). Neat! 
+    pc.getItems().stream().filter(i -> i.isTangible())
+            .forEach(i -> sb.append("\t" + StringUtils.capitalize(messages.get(i.getTitle())) + "\n"));
 
     return sb.toString();
   }
