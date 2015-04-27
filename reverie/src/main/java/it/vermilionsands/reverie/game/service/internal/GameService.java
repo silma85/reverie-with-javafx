@@ -6,6 +6,7 @@ package it.vermilionsands.reverie.game.service.internal;
 import it.vermilionsands.reverie.configuration.Constants;
 import it.vermilionsands.reverie.configuration.Messages;
 import it.vermilionsands.reverie.game.Randomizer;
+import it.vermilionsands.reverie.game.domain.Directions;
 import it.vermilionsands.reverie.game.domain.GameState;
 import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.PlayerCharacter;
@@ -69,10 +70,10 @@ public class GameService {
 
       final Room starting = roomService.getStartingRoom();
 
-      final GameState state = new GameState();
+      GameState state = new GameState();
       state.setPlayerCharacter(pc);
       state.setCurrentRoom(starting);
-      gameRepository.save(state);
+      state = gameRepository.save(state);
 
       StringBuffer briefing = new StringBuffer();
       briefing.append(randomizer.rollString(messages.get("reverie.gui.intro.a"), pc.getName()))
@@ -83,7 +84,7 @@ public class GameService {
       controller.getAdventureText().setText(briefing.toString());
       controller.getAdventureCommandResponses().setText(messages.get("reverie.gui.command.intro"));
 
-      this.refreshStatusText();
+      this.refreshStatusText(state);
 
     } else {
       log.error("Fatal. Exiting...");
@@ -98,16 +99,80 @@ public class GameService {
     return gameRepository.findTopByOrderBySaveDateDesc();
   }
 
-  public void advanceRoom(GameState state, Room next) {
-    state.setCurrentRoom(next);
-    gameRepository.save(state);
+  /**
+   * If false, the direction was invalid.
+   * 
+   * @param state
+   * @param dir
+   * @return
+   */
+  public boolean tryAdvanceRoom(GameState state, Directions dir) {
 
-    this.refreshRoomText(next);
-    this.refreshStatusText();
+    Room current = state.getCurrentRoom();
+
+    switch (dir) {
+    case N:
+      state.setCurrentRoom(state.getCurrentRoom().getNorth());
+      break;
+
+    case S:
+      state.setCurrentRoom(state.getCurrentRoom().getSouth());
+      break;
+
+    case W:
+      state.setCurrentRoom(state.getCurrentRoom().getWest());
+      break;
+
+    case E:
+      state.setCurrentRoom(state.getCurrentRoom().getEast());
+      break;
+
+    case U:
+      state.setCurrentRoom(state.getCurrentRoom().getUp());
+      break;
+
+    case D:
+      state.setCurrentRoom(state.getCurrentRoom().getDown());
+      break;
+    }
+
+    final Room next = state.getCurrentRoom();
+
+    if (next != null) {
+      this.advanceRoom(state, next);
+      return true;
+    } else {
+      state.setCurrentRoom(current);
+      return false;
+    }
   }
 
-  private void refreshStatusText() {
-    final GameState state = this.getCurrentState();
+  /**
+   * @param state
+   * @param next
+   */
+  public void advanceRoom(GameState state, final Room next) {
+    state = gameRepository.save(state);
+
+    this.refreshRoomText(next);
+    this.refreshStatusText(state);
+    this.printRandomAmbience(next);
+  }
+
+  /**
+   * Prints random ambience with a probability of 1/8. Random ambiences are block-based.
+   * 
+   * @param next
+   */
+  private void printRandomAmbience(final Room next) {
+    final String block = next.getTitle().substring(0, next.getTitle().lastIndexOf("."));
+    final String ambienceOptions = messages.get(block + ".ambience");
+    if (!StringUtils.isEmpty(ambienceOptions) && randomizer.roll(0, 160) > 140) {
+      controller.getAdventureText().appendText(randomizer.rollString(ambienceOptions));
+    }
+  }
+
+  private void refreshStatusText(final GameState state) {
     final String statusText = String.format("%s %s - %s", pcService.getInfoText(state.getPlayerCharacter()),
             this.getVersion(), messages.get(state.getCurrentRoom().getTitle()));
     controller.getStatusText().setText(statusText);
@@ -119,20 +184,7 @@ public class GameService {
     controller.getAdventureText().appendText(roomService.getRoomItemsText(next));
   }
 
-  public boolean checkItemPresent(String itemKeyword) {
-
-    final Item item = itemService.findByKeywords(itemKeyword);
-
-    if (item != null) {
-      if (getCurrentState().getCurrentRoom().has(item) || getCurrentState().getPlayerCharacter().has(item)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public String pickupItem(final GameState state, final Item item) {
+  public String pickupItem(final Item item) {
 
     // If it is pickupable and not already in your backpack...
     if (!item.isPickupable()) {
@@ -142,7 +194,9 @@ public class GameService {
       return nopickup;
     }
 
-    if (!getCurrentState().getCurrentRoom().has(item)) {
+    final GameState state = this.getCurrentState();
+
+    if (!state.getCurrentRoom().has(item)) {
       return messages.get("items.pickup.already", messages.get(item.getTitle()));
     }
 

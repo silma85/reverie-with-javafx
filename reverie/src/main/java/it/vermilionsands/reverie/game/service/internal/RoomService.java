@@ -76,6 +76,7 @@ public class RoomService {
 
         // Popolamento Room
         room.setCode(code);
+        room.setBlock(blockKey);
         room.setTitle(roomKey);
         room.setDescription(roomKey + Constants.ROOM_DESCRIPTION_SUFFIX);
 

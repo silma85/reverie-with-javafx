@@ -10,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Text;
 
@@ -18,7 +19,6 @@ import javax.annotation.PostConstruct;
 import lombok.Getter;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import javafx.scene.image.Image;
 
 /**
  * This is also a configuration bean.
@@ -75,7 +75,8 @@ public class MainPaneController {
   @FXML
   private MenuItem debugReloadItems;
 
-  @FXML Image adventureImage;
+  @FXML
+  Image adventureImage;
 
   private void sayButtonAction() {
     commandResponder.getHistory().add(adventureCommands.getText());
@@ -92,15 +93,15 @@ public class MainPaneController {
     switch (event.getCode()) {
     case UP:
     case NUMPAD8:
-      commandResponder.incrementHistoryIndex(-1);
       adventureCommands.setText(commandResponder.getHistory().get(commandResponder.getHistoryIndex()));
+      commandResponder.incrementHistoryIndex(-1);
 
       break;
 
     case DOWN:
     case NUMPAD2:
-      commandResponder.incrementHistoryIndex(1);
       adventureCommands.setText(commandResponder.getHistory().get(commandResponder.getHistoryIndex()));
+      commandResponder.incrementHistoryIndex(1);
 
       break;
 

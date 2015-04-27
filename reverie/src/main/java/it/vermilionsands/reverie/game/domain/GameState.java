@@ -23,6 +23,9 @@ public class GameState extends RootEntity {
   @Basic
   private Date saveDate = new Date();
 
+  @Basic
+  private String lastDirection;
+
   @OneToOne
   private PlayerCharacter playerCharacter;
 

@@ -168,9 +168,9 @@ public class ItemService {
     return item.isFlipped();
   }
 
-  private boolean checkInInventory(final PlayerCharacter pc, final String itemKeyword) {
+  private boolean checkInInventory(final PlayerCharacter pc, final String code) {
 
-    final Item item = this.findByKeywords(itemKeyword);
+    final Item item = this.findByCode(code);
     if (item == null) {
       return false;
     }
@@ -202,8 +202,10 @@ public class ItemService {
     return items;
   }
 
-  public Item findByKeywords(final String keywords) {
-    return itemRepository.findByKeywordsContaining(keywords);
+  public List<Item> findByKeywords(final String keywords) {
+    List<Item> items = itemRepository.findByKeywordsContaining(keywords);
+
+    return items;
   }
 
   public Item findByCode(final String code) {
@@ -231,5 +233,28 @@ public class ItemService {
       return Arrays.asList(actions).contains(command);
     else
       return Arrays.asList(flipActions).contains(command);
+  }
+
+  public boolean checkItemPresent(final GameState state, final Item item) {
+
+    if (item != null) {
+      if (state.getCurrentRoom().has(item) || state.getPlayerCharacter().has(item)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public List<Item> narrowToPresent(final GameState state, final List<Item> items) {
+
+    List<Item> resultant = new ArrayList<Item>();
+    for (Item item : items) {
+      if (this.checkItemPresent(state, item)) {
+        resultant.add(item);
+      }
+    }
+
+    return resultant;
   }
 }

@@ -37,7 +37,7 @@ public class CommandResponder {
 
   private List<String> history = new ArrayList<String>();
 
-  private int historyIndex;
+  private int historyIndex = 0;
 
   public int incrementHistoryIndex(final int step) {
     historyIndex += step;

@@ -34,6 +34,9 @@ public class Room extends RootEntity {
   private String code;
 
   @Basic
+  private String block;
+
+  @Basic
   private String title;
 
   @Column(length = 1024)
