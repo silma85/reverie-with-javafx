@@ -160,7 +160,14 @@ public class GameService {
     return messages.get("items.pickup", messages.get(item.getTitle()));
   }
 
-  // TODO maybe move to itemService?
+  /**
+   * Flip items and do consequences (see items.properties).
+   * 
+   * @param state
+   * @param item
+   * @param command
+   * @return
+   */
   public boolean flipItem(final GameState state, Item item, final String command) {
 
     // If flipActions is empty, use the whole action list.
@@ -180,6 +187,24 @@ public class GameService {
     }
 
     // Else, change item state.
+    item = doFlipItem(state, item);
+
+    for (Item itemFlipped : itemService.listByCodes(item.getTitle() + ".flip.items")) {
+      // Let's not create recursive chains...
+      itemFlipped = doFlipItem(state, itemFlipped);
+    }
+
+    return true;
+  }
+
+  /**
+   * Do the actual item flipping routine.
+   * 
+   * @param state
+   * @param item
+   * @return
+   */
+  private Item doFlipItem(final GameState state, Item item) {
     item.setFlipped(true);
     item.setDescription(item.getTitle() + Constants.ITEM_DESCRIPTION_FLIPPED_SUFFIX);
     item = itemService.save(item);
@@ -207,11 +232,8 @@ public class GameService {
       pcService.save(pc);
     }
 
-    for (Item itemFlipped : itemService.listByCodes(item.getTitle() + ".flip.items")) {
-      // Let's not create recursive chains...
-      this.flipItem(state, itemFlipped, command);
-    }
+    this.refreshRoomText(room);
 
-    return true;
+    return item;
   }
 }

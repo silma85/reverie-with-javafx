@@ -18,6 +18,7 @@ import javax.annotation.PostConstruct;
 import lombok.Getter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import javafx.scene.image.Image;
 
 /**
  * This is also a configuration bean.
@@ -69,21 +70,24 @@ public class MainPaneController {
   private MenuItem fileExit;
 
   @FXML
-  MenuItem debugReloadPatterns;
+  private MenuItem debugReloadPatterns;
 
   @FXML
-  MenuItem debugReloadItems;
+  private MenuItem debugReloadItems;
 
-  @FXML
-  private void sayButtonAction(ActionEvent event) {
+  @FXML Image adventureImage;
+
+  private void sayButtonAction() {
     commandResponder.getHistory().add(adventureCommands.getText());
     commandResponder.incrementHistoryIndex(1);
-
     commandResponder.respondToCommand(adventureCommands.getText());
   }
 
   @FXML
   private void keyPressedAction(KeyEvent event) {
+
+    if (event.isConsumed())
+      return;
 
     switch (event.getCode()) {
     case UP:
@@ -100,6 +104,11 @@ public class MainPaneController {
 
       break;
 
+    case ENTER:
+      this.sayButtonAction();
+      this.adventureCommands.requestFocus();
+      break;
+
     default:
       break;
     }
@@ -113,12 +122,12 @@ public class MainPaneController {
   @FXML
   public void reloadPatternAction(ActionEvent event) {
     commandResponder.getCommandMatcher().init();
-    this.adventureText.setText(messages.get("reverie.gui.debug.reload.actions"));
+    this.adventureCommandResponses.setText(messages.get("reverie.gui.debug.reload.actions"));
   }
 
   @FXML
   public void reloadObjectsAction(ActionEvent event) {
     gameService.init();
-    this.adventureText.setText(messages.get("reverie.gui.debug.reload.objects"));
+    this.adventureCommandResponses.setText(messages.get("reverie.gui.debug.reload.objects"));
   }
 }

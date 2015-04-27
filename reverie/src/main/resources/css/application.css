@@ -3,3 +3,8 @@
 .root { 
 	-fx-background-color: white ; 
 }
+
+.text-area {
+	-fx-font-family: monospace;
+	-fx-font-size: 11pt;
+}

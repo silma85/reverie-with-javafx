@@ -2,6 +2,7 @@ package it.vermilionsands.reverie.game.service.internal;
 
 import it.vermilionsands.reverie.configuration.Constants;
 import it.vermilionsands.reverie.configuration.Messages;
+import it.vermilionsands.reverie.game.domain.GameState;
 import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.Room;
 import it.vermilionsands.reverie.game.repository.RoomRepository;
@@ -37,6 +38,9 @@ public class RoomService {
   @Autowired
   private Messages messages;
 
+  @Autowired
+  private GameService gameService;
+
   public Room getStartingRoom() {
     return roomRepository.findByCode(Constants.ROOM_DEFAULT);
   }
@@ -49,9 +53,6 @@ public class RoomService {
    */
   public boolean initRooms() {
 
-    // Delete all rooms
-    roomRepository.deleteAll();
-
     // Gather room data
     final ArrayList<Room> roomList = new ArrayList<Room>();
 
@@ -62,19 +63,24 @@ public class RoomService {
 
       String blockKey = Constants.ROOM_PREFIX + "." + block;
 
-      for (String room : rooms) {
+      for (String code : rooms) {
 
-        String roomKey = blockKey + "." + room;
+        Room room = new Room();
 
-        Room obj = new Room();
+        // Check if item was already present and, if so, load it.
+        Room oldRoom = roomRepository.findByCode(code);
+        if (oldRoom != null)
+          room = oldRoom;
+
+        String roomKey = blockKey + "." + code;
 
         // Popolamento Room
-        obj.setCode(room);
-        obj.setTitle(roomKey);
-        obj.setDescription(roomKey + Constants.ROOM_DESCRIPTION_SUFFIX);
+        room.setCode(code);
+        room.setTitle(roomKey);
+        room.setDescription(roomKey + Constants.ROOM_DESCRIPTION_SUFFIX);
 
-        log.info("Creating room: " + room);
-        roomList.add(obj);
+        log.info("Creating room: " + code);
+        roomList.add(room);
       }
     }
 
@@ -186,6 +192,14 @@ public class RoomService {
     roomRepository.updateEast(newRoom, oldRoomCode);
     roomRepository.updateUp(newRoom, oldRoomCode);
     roomRepository.updateDown(newRoom, oldRoomCode);
+
+    // Check we haven't already picked up some items.
+    final GameState state = gameService.getCurrentState();
+    for (Item item : newRoom.getItems())
+      if (state.getPlayerCharacter().getItems().contains(item))
+        newRoom.getItems().remove(item);
+
+    roomRepository.save(newRoom);
   }
 
   @Transactional

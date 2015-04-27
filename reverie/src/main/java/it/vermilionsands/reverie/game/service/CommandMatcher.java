@@ -133,8 +133,23 @@ public class CommandMatcher {
       return actionSpecificMessage;
     }
 
+    final boolean actionValid = itemService.validateCommand(item, command, state);
+
+    // If command is a flipaction and item was already flipped, return flipped(-action-specific)-desc
+    if (actionValid && item.isFlipped() && itemService.isFlipAction(item, command)) {
+      final String alreadyFlippedSpecificMessage = messages.get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX + command
+              + ".already");
+      final String alreadyFlippedMessage = messages.get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX + ".already");
+      if (!StringUtils.isEmpty(alreadyFlippedSpecificMessage))
+        return alreadyFlippedSpecificMessage;
+      else if (!StringUtils.isEmpty(alreadyFlippedMessage))
+        return alreadyFlippedMessage;
+      else
+        return messages.get("items.flip.already");
+    }
+
     // Validate action.
-    if (!itemService.validateCommand(item, command, state)) {
+    if (!actionValid) {
       String specificNoFlip = messages.get(item.getTitle() + ".actions." + command + Constants.ITEM_NOFLIP_SUFFIX);
       return StringUtils.isEmpty(specificNoFlip) ? messages.get(item.getTitle() + Constants.ITEM_NOFLIP_SUFFIX)
               : specificNoFlip;

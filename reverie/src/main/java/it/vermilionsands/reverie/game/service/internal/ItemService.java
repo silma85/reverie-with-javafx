@@ -47,9 +47,6 @@ public class ItemService {
    */
   public boolean initItems() {
 
-    // Delete all items.
-    itemRepository.deleteAll();
-
     // Gather item data.
     ArrayList<Item> items = new ArrayList<Item>();
 
@@ -57,9 +54,15 @@ public class ItemService {
 
     for (String code : itemBlocks) {
 
+      Item item = new Item();
+
+      // Check if item was already present and, if so, load it.
+      Item oldItem = itemRepository.findByCode(code);
+      if (oldItem != null)
+        item = oldItem;
+
       final String itemRootKey = Constants.ITEM_PREFIX + "." + code;
 
-      Item item = new Item();
       item.setCode(code);
       item.setTitle(itemRootKey);
       item.setDescription(itemRootKey + Constants.ITEM_DESCRIPTION_SUFFIX);
@@ -209,5 +212,24 @@ public class ItemService {
 
   public Item save(final Item item) {
     return itemRepository.save(item);
+  }
+
+  /**
+   * Check if Command is a flip-action for Item.
+   * 
+   * @param item
+   * @param command
+   * @return
+   */
+  public boolean isFlipAction(Item item, String command) {
+
+    final String flipActions = messages
+            .get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX + Constants.ITEM_ACTION_SUFFIX);
+    final String actions = messages.get(item.getTitle() + Constants.ITEM_ACTION_SUFFIX);
+
+    if (StringUtils.isEmpty(flipActions))
+      return Arrays.asList(actions).contains(command);
+    else
+      return Arrays.asList(flipActions).contains(command);
   }
 }

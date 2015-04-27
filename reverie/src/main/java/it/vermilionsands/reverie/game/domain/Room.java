@@ -10,7 +10,7 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 
 import lombok.Data;
@@ -39,7 +39,7 @@ public class Room extends RootEntity {
   @Column(length = 1024)
   private String description;
 
-  @OneToMany(fetch = FetchType.EAGER)
+  @ManyToMany(fetch = FetchType.EAGER)
   private Set<Item> items = new HashSet<Item>();
 
   @OneToOne(optional = true)
