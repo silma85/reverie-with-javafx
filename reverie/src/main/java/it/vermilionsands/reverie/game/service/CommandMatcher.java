@@ -176,7 +176,7 @@ public class CommandMatcher {
     case "butta":
       return gameService.dropItem(item);
 
-    // Not direction commands, but related to
+      // Not direction commands, but related to
     case "sali":
     case "entra":
       final String toRoom = messages.get(String.format("%s.actions.%s.toroom", item.getTitle(), command));
@@ -203,7 +203,7 @@ public class CommandMatcher {
       if (items.indexOf(item) == items.size() - 2) {
         sb.append(" o ");
       } else if (items.indexOf(item) == items.size() - 1) {
-        sb.append("?");
+        sb.append("");
       } else {
         sb.append(", ");
       }
@@ -243,7 +243,7 @@ public class CommandMatcher {
       if (!StringUtils.isEmpty(state.getLastDirection())) {
         return doAsCommand(state.getLastDirection());
       } else {
-        return messages.get("items.command.refused.direction", command);
+        return messages.get("items.command.refused.direction", StringUtils.capitalize(command));
       }
     case "n":
     case "north":

@@ -61,13 +61,11 @@ public class GameService {
 
   @PostConstruct
   public void init() {
-    final PlayerCharacter pc = pcService.createPC();
     final boolean items = itemService.initItems();
     final boolean rooms = roomService.initRooms();
+    final PlayerCharacter pc = pcService.createPC();
 
     if (rooms && items) {
-      // TODO starting items on pc also?
-
       final Room starting = roomService.getStartingRoom();
 
       GameState state = new GameState();

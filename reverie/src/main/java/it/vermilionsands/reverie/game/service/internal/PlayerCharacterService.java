@@ -38,6 +38,7 @@ public class PlayerCharacterService {
     pc.setName(randomizer.rollName());
     pc.setLuck(0);
     pc.setSex(Sexes.values()[randomizer.roll(2)]);
+    pc.setItems(itemService.listByCodes("items.initial.pack"));
 
     pc = pcRepository.save(pc);
 

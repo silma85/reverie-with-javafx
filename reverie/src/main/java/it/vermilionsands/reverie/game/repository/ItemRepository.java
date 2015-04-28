@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public interface ItemRepository extends CrudRepository<Item, Long> {
 
-  public List<Item> findByKeywordsContaining(String keyword);
+  public List<Item> findByKeywordsLike(String keyword);
 
   public Item findByCode(String itemCode);
 

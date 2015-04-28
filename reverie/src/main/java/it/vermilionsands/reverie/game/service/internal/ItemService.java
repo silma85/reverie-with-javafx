@@ -14,7 +14,9 @@ import it.vermilionsands.reverie.game.repository.ItemRepository;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -190,8 +192,8 @@ public class ItemService {
     return description;
   }
 
-  public List<Item> listByCodes(final String codes) {
-    List<Item> items = new ArrayList<Item>();
+  public Set<Item> listByCodes(final String codes) {
+    Set<Item> items = new HashSet<Item>();
 
     final String createItemsInv = messages.get(codes);
     if (!StringUtils.isEmpty(createItemsInv)) {
@@ -205,7 +207,7 @@ public class ItemService {
   }
 
   public List<Item> findByKeywords(final String keywords) {
-    List<Item> items = itemRepository.findByKeywordsContaining(keywords);
+    List<Item> items = itemRepository.findByKeywordsLike(keywords);
 
     return items;
   }

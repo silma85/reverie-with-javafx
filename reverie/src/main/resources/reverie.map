@@ -1,0 +1,19 @@
+Construct
+
+	pillar
+	| | | |
+	avenuew -- avenuee
+		|		| |
+		darkbuilding -- exit [up to floor]
+		(dbtoexit)
+		
+					floor [e][w] closet
+					|[n]
+	corridor bend -- corridor -- prison
+	|				|[w]
+	corr. cavein	corridor's end
+					|[up]
+					hut
+					|[s]
+	back of hut	--	courtyard [e to forest]
+	
