@@ -45,8 +45,9 @@ public enum Constants {
   public static final String ITEM_AMBIENCE_SUFFIX = ".ambience";
   public static final String ITEM_AMBIENCE_FLIPPED_SUFFIX = ".ambience.flipped";
 
-  public static final String SEPARATOR = ";";
+  public static final String SEPARATOR = Pattern.quote(";");
   public static final String SEPARATOR_OPTION = Pattern.quote("|");
+  public static final String SEPARATOR_TRIPLET = Pattern.quote("$");
 
   public final static String REVERIE_ICON = "spiral-icon.png";
 

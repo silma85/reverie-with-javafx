@@ -160,13 +160,18 @@ public class GameService {
   /**
    * Prints random ambience with a probability of 1/8. Random ambiences are block-based.
    * 
-   * @param next
+   * @param room
    */
-  private void printRandomAmbience(final Room next) {
-    final String block = next.getTitle().substring(0, next.getTitle().lastIndexOf("."));
-    final String ambienceOptions = messages.get(block + ".ambience");
+  private void printRandomAmbience(final Room room) {
+    final String ambienceOptions = messages.get(room.getBlock() + ".ambience");
+    final String specAmbienceOptions = messages.get(room.getTitle() + ".ambience");
+
     if (!StringUtils.isEmpty(ambienceOptions) && randomizer.roll(0, 160) > 140) {
-      controller.getAdventureCommandResponses().appendText(randomizer.rollString(ambienceOptions));
+      controller.getAdventureCommandResponses().appendText("\n" + randomizer.rollString(ambienceOptions));
+    }
+
+    if (!StringUtils.isEmpty(specAmbienceOptions) && randomizer.roll(0, 160) > 140) {
+      controller.getAdventureCommandResponses().appendText("\n" + randomizer.rollString(specAmbienceOptions));
     }
   }
 
@@ -297,7 +302,7 @@ public class GameService {
     }
 
     for (Room roomFlipped : roomService.listByCodes(item.getTitle() + ".flip.rooms")) {
-      roomService.flipRoom(roomFlipped.getCode());
+      roomService.openRoomDirections(roomFlipped.getCode());
     }
 
     for (Item itemAdded : itemService.listByCodes(item.getTitle() + ".flip.create.room")) {
@@ -313,5 +318,10 @@ public class GameService {
     this.refreshRoomText(room);
 
     return item;
+  }
+
+  public String doIntransitiveCommand(String group) {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

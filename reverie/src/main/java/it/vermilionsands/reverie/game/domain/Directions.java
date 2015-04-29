@@ -18,4 +18,31 @@ public enum Directions {
   U,
   D;
 
+  public static Directions get(final int index) {
+    return Directions.values()[index];
+  }
+
+  public static Room getInDirection(final Room room, final Directions direction) {
+    switch (direction) {
+    case N:
+      return room.getNorth();
+
+    case S:
+      return room.getSouth();
+
+    case W:
+      return room.getWest();
+
+    case E:
+      return room.getEast();
+
+    case U:
+      return room.getUp();
+
+    case D:
+      return room.getDown();
+    }
+
+    return null;
+  }
 }

@@ -2,7 +2,7 @@ package it.vermilionsands.reverie.game.service.internal;
 
 import it.vermilionsands.reverie.configuration.Constants;
 import it.vermilionsands.reverie.configuration.Messages;
-import it.vermilionsands.reverie.game.domain.GameState;
+import it.vermilionsands.reverie.game.domain.Directions;
 import it.vermilionsands.reverie.game.domain.Item;
 import it.vermilionsands.reverie.game.domain.Room;
 import it.vermilionsands.reverie.game.repository.RoomRepository;
@@ -144,17 +144,33 @@ public class RoomService {
     return split;
   }
 
+  /**
+   * Return formatted room connection text. If a direction does not correspond to a Room, return the closed connection
+   * text. Else the open connection text. This is for the description, not for responses to direction commands.
+   * 
+   * @param room
+   * @return
+   */
   public String getRoomConnectionsText(final Room room) {
 
-    final StringBuffer sb = new StringBuffer("\n\n");
+    final StringBuffer sb = new StringBuffer(" ");
 
-    final String[] nswePrefixes = messages.get(Constants.ROOM_DIRECTIONS_PREFIX + Constants.ROOM_NSWE_SUFFIX).split(
-            Constants.SEPARATOR);
-    final String[] connections = messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX).split(
+    final String[] directionPrefixes = messages.get(Constants.ROOM_DIRECTIONS_PREFIX + Constants.ROOM_NSWE_SUFFIX)
+            .split(Constants.SEPARATOR);
+    final String[] closedConnections = messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX + ".closed")
+            .split(Constants.SEPARATOR);
+    final String[] openConnections = messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX).split(
             Constants.SEPARATOR);
 
-    for (int i = 0; i < connections.length; i++) {
-      sb.append(!StringUtils.isEmpty(connections[i]) ? String.format(connections[i], nswePrefixes[i]) + "\n" : "");
+    // Check connections.
+    for (int i = 0; i < openConnections.length; i++) {
+      if (Directions.getInDirection(room, Directions.get(i)) == null) {
+        sb.append(!StringUtils.isEmpty(closedConnections[i]) ? String
+                .format(closedConnections[i], directionPrefixes[i]) + " " : "");
+      } else {
+        sb.append(!StringUtils.isEmpty(openConnections[i]) ? String.format(openConnections[i], directionPrefixes[i])
+                + " " : "");
+      }
     }
 
     sb.append("\n");
@@ -177,30 +193,102 @@ public class RoomService {
   }
 
   /**
-   * Replaces a room with the designated flip room.
+   * Open a room's directions.
    * 
    * @param code
    */
-  public void flipRoom(final String oldRoomCode) {
-    final Room oldRoom = roomRepository.findByCode(oldRoomCode);
-    final String newRoomCode = messages.get(oldRoom.getTitle() + Constants.ROOM_FLIP_SUFFIX);
-    final Room newRoom = roomRepository.findByCode(newRoomCode);
+  public void openRoomDirections(final String openOptions) {
 
-    // Change all directions.
-    roomRepository.updateNorth(newRoom, oldRoomCode);
-    roomRepository.updateSouth(newRoom, oldRoomCode);
-    roomRepository.updateWest(newRoom, oldRoomCode);
-    roomRepository.updateEast(newRoom, oldRoomCode);
-    roomRepository.updateUp(newRoom, oldRoomCode);
-    roomRepository.updateDown(newRoom, oldRoomCode);
+    final List<Room> roomsToUpdate = new ArrayList<>();
 
-    // Check we haven't already picked up some items.
-    final GameState state = gameService.getCurrentState();
-    for (Item item : newRoom.getItems())
-      if (state.getPlayerCharacter().getItems().contains(item))
-        newRoom.getItems().remove(item);
+    // String is in form room$direction$destination;room$direction$destination...
+    for (String triplet : openOptions.split(Constants.SEPARATOR)) {
 
-    roomRepository.save(newRoom);
+      final String[] splitlet = triplet.split(Constants.SEPARATOR_TRIPLET);
+      final Room room = roomRepository.findByCode(splitlet[0]);
+      final Room dest = roomRepository.findByCode(splitlet[2]);
+
+      Directions direction = Directions.valueOf(splitlet[1]);
+
+      switch (direction) {
+      case N:
+        room.setNorth(dest);
+        break;
+
+      case S:
+        room.setSouth(dest);
+        break;
+
+      case W:
+        room.setWest(dest);
+        break;
+
+      case E:
+        room.setEast(dest);
+        break;
+
+      case U:
+        room.setUp(dest);
+        break;
+
+      case D:
+        room.setDown(dest);
+        break;
+      }
+
+      roomsToUpdate.add(room);
+    }
+
+    roomRepository.save(roomsToUpdate);
+  }
+
+  /**
+   * Close a room's directions.
+   * 
+   * @param code
+   */
+  public void closeRoomDirections(final String closeOptions) {
+
+    final List<Room> roomsToUpdate = new ArrayList<>();
+
+    // String is in form room$direction$destination;room$direction$destination...
+    for (String triplet : closeOptions.split(Constants.SEPARATOR)) {
+
+      final String[] splitlet = triplet.split(Constants.SEPARATOR_TRIPLET);
+      final Room room = roomRepository.findByCode(splitlet[0]);
+
+      Directions direction = Directions.valueOf(splitlet[1]);
+
+      switch (direction) {
+      case N:
+        room.setNorth(null);
+        break;
+
+      case S:
+        room.setSouth(null);
+        break;
+
+      case W:
+        room.setWest(null);
+        break;
+
+      case E:
+        room.setEast(null);
+        break;
+
+      case U:
+        room.setUp(null);
+        break;
+
+      case D:
+        room.setDown(null);
+        break;
+      }
+
+      roomsToUpdate.add(room);
+    }
+
+    roomRepository.save(roomsToUpdate);
   }
 
   @Transactional

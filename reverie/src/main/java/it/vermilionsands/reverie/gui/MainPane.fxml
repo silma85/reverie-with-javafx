@@ -59,7 +59,7 @@
             <Insets top="4.0" />
           </VBox.margin>
         </HBox>
-        <TextArea fx:id="adventureCommandResponses" editable="false" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="800.0" wrapText="true">
+        <TextArea fx:id="adventureCommandResponses" editable="false" minHeight="-Infinity" minWidth="-Infinity" prefHeight="120.0" prefWidth="800.0" wrapText="true">
           <VBox.margin>
             <Insets top="6.0" />
           </VBox.margin>

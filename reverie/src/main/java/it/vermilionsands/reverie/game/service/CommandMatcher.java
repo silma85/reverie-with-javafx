@@ -9,7 +9,6 @@ import it.vermilionsands.reverie.game.Randomizer;
 import it.vermilionsands.reverie.game.domain.Directions;
 import it.vermilionsands.reverie.game.domain.GameState;
 import it.vermilionsands.reverie.game.domain.Item;
-import it.vermilionsands.reverie.game.domain.Room;
 import it.vermilionsands.reverie.game.service.internal.GameService;
 import it.vermilionsands.reverie.game.service.internal.ItemService;
 import it.vermilionsands.reverie.game.service.internal.PlayerCharacterService;
@@ -56,20 +55,55 @@ public class CommandMatcher {
   @Autowired
   private PlayerCharacterService pcService;
 
+  /**
+   * Command patterns:
+   * command.list.meta.who
+   * command.list.meta.version
+   * command.list.meta.inventory
+   * command.list.directions.n
+   * command.list.directions.s
+   * command.list.directions.w
+   * command.list.directions.e
+   * command.list.directions.u
+   * command.list.directions.d
+   *
+   * ...and also
+   * 
+   * command.list.transitive
+   * command.list.transitive.pickup
+   * command.list.transitive.putdown
+   * command.list.intransitive
+   */
   @PostConstruct
   public void init() {
-    this.metaPattern = Pattern.compile(messages.get("reverie.gui.command.list.meta"));
-    this.directionPattern = Pattern.compile(messages.get("reverie.gui.command.list.directions"));
-    this.iActionPattern = Pattern.compile(messages.get("reverie.gui.command.list.intransitive"));
-    this.tActionPattern = Pattern.compile(messages.get("reverie.gui.command.list.transitive"));
-    this.itemsPattern = Pattern.compile(messages.get("items.all.pattern"));
+    this.whoPattern = Pattern.compile(messages.get("command.list.meta.who"));
+    this.versionPattern = Pattern.compile(messages.get("command.list.meta.version"));
+    this.inventoryPattern = Pattern.compile(messages.get("command.list.meta.inventory"));
+    this.directionPatternN = Pattern.compile(messages.get("command.list.directions.n"));
+    this.directionPatternS = Pattern.compile(messages.get("command.list.directions.s"));
+    this.directionPatternW = Pattern.compile(messages.get("command.list.directions.w"));
+    this.directionPatternE = Pattern.compile(messages.get("command.list.directions.e"));
+    this.directionPatternU = Pattern.compile(messages.get("command.list.directions.u"));
+    this.directionPatternD = Pattern.compile(messages.get("command.list.directions.d"));
+    this.iActionPattern = Pattern.compile(messages.get("command.list.intransitive"));
+    this.tActionPattern = Pattern.compile(messages.get("command.list.transitive"));
+    this.pickupPattern = Pattern.compile(messages.get("command.list.transitive.pickup"));
+    this.putdownPattern = Pattern.compile(messages.get("command.list.transitive.putdown"));
   }
 
-  private Pattern metaPattern;
-  private Pattern directionPattern;
+  private Pattern whoPattern;
+  private Pattern versionPattern;
+  private Pattern inventoryPattern;
+  private Pattern directionPatternN;
+  private Pattern directionPatternS;
+  private Pattern directionPatternW;
+  private Pattern directionPatternE;
+  private Pattern directionPatternU;
+  private Pattern directionPatternD;
   private Pattern iActionPattern;
   private Pattern tActionPattern;
-  private Pattern itemsPattern;
+  private Pattern pickupPattern;
+  private Pattern putdownPattern;
 
   public String match(String command) {
 
@@ -79,25 +113,67 @@ public class CommandMatcher {
       return this.advanceRoom(state, Directions.U);
     }
 
-    // Meta commands
-    final Matcher metaMatcher = metaPattern.matcher(command);
+    // Whois
+    if (whoPattern.matcher(command).matches()) {
+      return gameService.doIntransitiveCommand(whoPattern.matcher(command).group());
+    }
 
-    if (metaMatcher.matches()) {
-      return doAsCommand(metaMatcher.group());
+    // Version
+    if (versionPattern.matcher(command).matches()) {
+      return gameService.doIntransitiveCommand(versionPattern.matcher(command).group());
+    }
+
+    // Inventory
+    if (inventoryPattern.matcher(command).matches()) {
+      return gameService.doIntransitiveCommand(inventoryPattern.matcher(command).group());
     }
 
     // Direction commands
-    final Matcher directionMatcher = directionPattern.matcher(command);
+    if (directionPatternN.matcher(command).matches()) {
+      return advanceRoom(state, Directions.N);
+    }
 
-    if (directionMatcher.matches()) {
-      return doAsCommand(directionMatcher.group());
+    if (directionPatternS.matcher(command).matches()) {
+      return advanceRoom(state, Directions.S);
+    }
+
+    if (directionPatternW.matcher(command).matches()) {
+      return advanceRoom(state, Directions.W);
+    }
+
+    if (directionPatternE.matcher(command).matches()) {
+      return advanceRoom(state, Directions.E);
+    }
+
+    if (directionPatternU.matcher(command).matches()) {
+      return advanceRoom(state, Directions.U);
+    }
+
+    if (directionPatternD.matcher(command).matches()) {
+      return advanceRoom(state, Directions.D);
+    }
+
+    // Pickup commands
+    final Matcher pickupMatcher = pickupPattern.matcher(command);
+    if (pickupMatcher.matches()) {
+      if (!StringUtils.isEmpty(command.substring(pickupMatcher.end(), command.length())))
+        return doPickupCommand(state, command.substring(pickupMatcher.end(), command.length()));
+      else
+        return randomizer.rollString(messages.get("command.refused.transitive"), command.trim());
+    }
+
+    // Put down commands
+    final Matcher putdownMatcher = putdownPattern.matcher(command);
+    if (putdownMatcher.matches()) {
+      if (!StringUtils.isEmpty(command.substring(putdownMatcher.end(), command.length())))
+        return doPutdownCommand(state, command.substring(putdownMatcher.end(), command.length()));
+      else
+        return randomizer.rollString(messages.get("command.refused.transitive"), command.trim());
     }
 
     // Intransitive action commands
-    final Matcher iActionMatcher = iActionPattern.matcher(command);
-
-    if (iActionMatcher.matches()) {
-      return doAsCommand(iActionMatcher.group());
+    if (iActionPattern.matcher(command).matches()) {
+      return gameService.doIntransitiveCommand(iActionPattern.matcher(command).group());
     }
 
     // Transitive action commands
@@ -108,18 +184,59 @@ public class CommandMatcher {
     final boolean hasItem = hasAction && command.trim().length() > tActionMatcher.end(); // Meaning there's more than an action here.
 
     if (hasAction && hasItem) {
-      return doAsCommand(tActionMatcher.group(), command.substring(tActionMatcher.end(), command.length()).trim());
+      return doOtherTransitiveCommand(state, tActionMatcher.group(),
+              command.substring(tActionMatcher.end(), command.length()).trim());
     } else if (hasAction) {
-      return randomizer.rollString(messages.get("reverie.gui.command.refused.transitive"), command.trim());
+      return randomizer.rollString(messages.get("command.refused.transitive"), command.trim());
     }
 
-    return randomizer.rollString(messages.get("reverie.gui.command.refused"));
+    return randomizer.rollString(messages.get("command.refused"));
   }
 
-  private String doAsCommand(final String command, final String itemKeywords) {
+  private String doPutdownCommand(final GameState state, final String keywords) {
+    final List<Item> items = itemService.narrowToPresent(state, itemService.findByKeywords(keywords));
+    Item item = null;
+    if (items.isEmpty()) {
+      return randomizer.rollString(messages.get("items.command.refused.unfound"), keywords);
+    } else if (items.size() == 1) {
+      item = items.get(0);
+    } else {
+      return this.disambiguateItems(items);
+    }
 
-    // Get gamestate. Response is context-sensitive...
-    final GameState state = gameService.getCurrentState();
+    return gameService.dropItem(item);
+  }
+
+  /**
+   * Execute a pickup command.
+   * 
+   * @param state
+   * @param keywords
+   * @return
+   */
+  private String doPickupCommand(final GameState state, final String keywords) {
+    final List<Item> items = itemService.narrowToPresent(state, itemService.findByKeywords(keywords));
+    Item item = null;
+    if (items.isEmpty()) {
+      return randomizer.rollString(messages.get("items.command.refused.unfound"), keywords);
+    } else if (items.size() == 1) {
+      item = items.get(0);
+    } else {
+      return this.disambiguateItems(items);
+    }
+
+    return gameService.pickupItem(item);
+  }
+
+  /**
+   * Do a generic transitive command
+   * 
+   * @param state
+   * @param command
+   * @param itemKeywords
+   * @return
+   */
+  private String doOtherTransitiveCommand(final GameState state, final String command, final String itemKeywords) {
 
     final List<Item> items = itemService.narrowToPresent(state, itemService.findByKeywords(itemKeywords));
     Item item = null;
@@ -166,34 +283,16 @@ public class CommandMatcher {
       return messages.get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX);
     }
 
-    // Process more generic actions.
-    switch (command) {
-    case "prendi":
-    case "raccogli":
-      return gameService.pickupItem(item);
-
-    case "lascia":
-    case "butta":
-      return gameService.dropItem(item);
-
-      // Not direction commands, but related to
-    case "sali":
-    case "entra":
-      final String toRoom = messages.get(String.format("%s.actions.%s.toroom", item.getTitle(), command));
-      final Room next = roomService.findByCode(toRoom);
-      gameService.advanceRoom(state, next);
-      return messages.get(String.format("%s.actions.%s.toroom.description", item.getTitle(), command));
-
-    case "osserva":
-    case "esamina":
-    case "guarda":
-      return itemService.lookItem(item);
-
-    default:
-      return randomizer.rollString(messages.get("items.command.unfound"), messages.get(item.getTitle()));
-    }
+    // If all else fails...
+    return randomizer.rollString(messages.get("items.command.unfound"), messages.get(item.getTitle()));
   }
 
+  /**
+   * Return an item code, or a disambiguation message.
+   * 
+   * @param items
+   * @return
+   */
   private String disambiguateItems(final List<Item> items) {
 
     final StringBuilder sb = new StringBuilder();
@@ -212,89 +311,6 @@ public class CommandMatcher {
     return String.format(messages.get("items.disambiguate"), sb.toString());
   }
 
-  private String doAsCommand(String command) {
-
-    // Get gamestate. Response is context-sensitive...
-    final GameState state = gameService.getCurrentState();
-
-    // Next room placeholder.
-    Room next = null;
-
-    switch (command) {
-    // Meta commands
-    case "who":
-    case "whois":
-    case "chi":
-    case "ciao":
-      return messages.get("reverie.gui.game.about");
-
-    case "versione":
-    case "v":
-      return gameService.getVersion();
-
-    case "inventario":
-    case "i":
-    case "zaino":
-      return pcService.getInventoryText(state.getPlayerCharacter());
-
-      // Direction commands
-    case "cammina":
-    case "prosegui":
-      if (!StringUtils.isEmpty(state.getLastDirection())) {
-        return doAsCommand(state.getLastDirection());
-      } else {
-        return messages.get("items.command.refused.direction", StringUtils.capitalize(command));
-      }
-    case "n":
-    case "north":
-    case "nord":
-      return advanceRoom(state, Directions.N);
-    case "s":
-    case "south":
-    case "sud":
-      return advanceRoom(state, Directions.S);
-    case "w":
-    case "o":
-    case "west":
-    case "ovest":
-      return advanceRoom(state, Directions.W);
-    case "e":
-    case "east":
-    case "est":
-      return advanceRoom(state, Directions.E);
-    case "u":
-    case "up":
-    case "su":
-    case "sali":
-      return advanceRoom(state, Directions.U);
-    case "d":
-    case "down":
-    case "giu":
-    case "scendi":
-      return advanceRoom(state, Directions.D);
-
-      // Intransitivi
-    case "parla":
-      return randomizer.rollString(messages.get("reverie.creatures.self.chatter"), new String[] {
-              randomizer.rollName(), String.valueOf(randomizer.roll(7, 149)) });
-    case "minaccia":
-      return "";
-    case "salta":
-      return "";
-    case "siediti":
-    case "siedi":
-      return "";
-    case "canta":
-      return randomizer.rollString(messages.get("reverie.creatures.self.sing"));
-
-    default:
-      log.warn(String.format("Attention: command %s should exist, but was not found in CommandMatcher.doAsCommand!",
-              command));
-      return messages.get(Constants.COMMAND_NOT_FOUND);
-    }
-
-  }
-
   /**
    * @param state
    * @param dir
@@ -304,7 +320,7 @@ public class CommandMatcher {
     if (gameService.tryAdvanceRoom(state, dir)) {
       return messages.get(Constants.COMMAND_ACCEPTED);
     } else {
-      return messages.get("reverie.gui.command.refused.direction");
+      return messages.get("command.refused.direction");
     }
   }
 }

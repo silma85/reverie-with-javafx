@@ -9,11 +9,15 @@ Construct
 		
 					floor [e][w] closet
 					|[n]
-	corridor bend -- corridor -- prison
-	|				|[w]
-	corr. cavein	corridor's end
-					|[up]
-					hut
 					|[s]
-	back of hut	--	courtyard [e to forest]
+	corridor bend [ne->e] -- corridor -- [n][s] prison
+	|[e]					|[sw->w]
+	|[w]					|[ne->e]
+	corr. cavein			corridor's end
+							|[u]
+							|[d]
+							hut
+							|[s]
+							|[n]
+			back of hut	--	courtyard [e to forest]
 	

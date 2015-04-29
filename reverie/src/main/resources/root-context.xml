@@ -18,6 +18,7 @@
 				<value>classpath:lang/creatures</value>
 				<value>classpath:lang/items</value>
 				<value>classpath:lang/rooms</value>
+				<value>classpath:lang/commands</value>
 			</list>
 		</property>
 		<property name="cacheSeconds" value="10" />
