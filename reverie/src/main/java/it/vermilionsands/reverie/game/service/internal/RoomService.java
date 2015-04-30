@@ -88,7 +88,7 @@ public class RoomService {
     // Persist rooms
     final Iterable<Room> savedRooms = roomRepository.save(roomList);
     this.createRoomConnections(savedRooms);
-    this.setRoomItems(savedRooms);
+    this.setItems(savedRooms);
 
     return true;
   }
@@ -124,7 +124,7 @@ public class RoomService {
     }
   }
 
-  private String[] paddedSplit(String all, int padding) {
+  public String[] paddedSplit(String all, int padding) {
     String[] split = all.split(Constants.SEPARATOR);
 
     if (split.length < padding) {
@@ -151,16 +151,16 @@ public class RoomService {
    * @param room
    * @return
    */
-  public String getRoomConnectionsText(final Room room) {
+  public String getConnectionsText(final Room room) {
 
     final StringBuffer sb = new StringBuffer(" ");
 
-    final String[] directionPrefixes = messages.get(Constants.ROOM_DIRECTIONS_PREFIX + Constants.ROOM_NSWE_SUFFIX)
-            .split(Constants.SEPARATOR);
-    final String[] closedConnections = messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX + ".closed")
-            .split(Constants.SEPARATOR);
-    final String[] openConnections = messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX).split(
-            Constants.SEPARATOR);
+    final String[] directionPrefixes = this.paddedSplit(
+            messages.get(Constants.ROOM_DIRECTIONS_PREFIX + Constants.ROOM_NSWE_SUFFIX), 4);
+    final String[] closedConnections = this.paddedSplit(
+            messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX + ".closed"), 4);
+    final String[] openConnections = this.paddedSplit(messages.get(room.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX),
+            4);
 
     // Check connections.
     for (int i = 0; i < openConnections.length; i++) {
@@ -178,9 +178,9 @@ public class RoomService {
     return sb.toString();
   }
 
-  public String getRoomItemsText(final Room room) {
+  public String getItemsText(final Room room) {
 
-    final StringBuffer sb = new StringBuffer();
+    final StringBuffer sb = new StringBuffer("\n");
 
     for (Item item : room.getItems()) {
       final String key = item.isFlipped() ? item.getTitle() + Constants.ITEM_AMBIENCE_FLIPPED_SUFFIX : item.getTitle()
@@ -197,7 +197,7 @@ public class RoomService {
    * 
    * @param code
    */
-  public void openRoomDirections(final String openOptions) {
+  public void openToDirections(final String openOptions) {
 
     final List<Room> roomsToUpdate = new ArrayList<>();
 
@@ -247,7 +247,7 @@ public class RoomService {
    * 
    * @param code
    */
-  public void closeRoomDirections(final String closeOptions) {
+  public void closeToDirections(final String closeOptions) {
 
     final List<Room> roomsToUpdate = new ArrayList<>();
 
@@ -292,7 +292,7 @@ public class RoomService {
   }
 
   @Transactional
-  private void setRoomItems(final Iterable<Room> rooms) {
+  private void setItems(final Iterable<Room> rooms) {
 
     for (Room room : rooms) {
       final String[] items = messages.get(room.getTitle() + Constants.ROOM_ITEM_SUFFIX).split(Constants.SEPARATOR);

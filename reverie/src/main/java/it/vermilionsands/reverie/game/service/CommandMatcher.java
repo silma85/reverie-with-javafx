@@ -14,11 +14,10 @@ import it.vermilionsands.reverie.game.service.internal.ItemService;
 import it.vermilionsands.reverie.game.service.internal.PlayerCharacterService;
 import it.vermilionsands.reverie.game.service.internal.RoomService;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,176 +55,107 @@ public class CommandMatcher {
   private PlayerCharacterService pcService;
 
   /**
-   * Command patterns:
-   * command.list.meta.who
-   * command.list.meta.version
-   * command.list.meta.inventory
-   * command.list.directions.n
-   * command.list.directions.s
-   * command.list.directions.w
-   * command.list.directions.e
-   * command.list.directions.u
-   * command.list.directions.d
-   *
-   * ...and also
+   * grammar:
+   * [verb][article?][keyword?][preposition?][keyword?]
    * 
-   * command.list.transitive
-   * command.list.transitive.pickup
-   * command.list.transitive.putdown
-   * command.list.intransitive
+   * I CANNOT identify keywords directly because not all keywords are known beforehand.
+   * So:
+   * 
+   * <pre>
+   *    a) Keyword 1 is text between verb.end() and preposition start (if any) or command end.
+   *    b) Keyword 2 is text between preposition end (if any) and command end.
+   *    c) Trim and try identification.
+   * </pre>
+   * 
+   * <pre>
+   * 1) identify all components of a sentence
+   *    a) verb
+   *    b) article or nothing
+   *    c) keyword 1 and/or keyword 2 or nothing
+   *    d) preposition or nothing
+   * 2) if no verb, return
+   * 3) if unknown verb, return
+   * 4) if verb is direction or intransitive, process it and return result
+   * 5) if verb is transitive
+   *    a) Process keyword 1. If not an item, or more than one, return.
+   *    b) If an item, process verb with item 1 and return result
+   * 6) if verb is 3-way
+   *    a) Process keyword 1. If not an item, or more than one, return.
+   *    b) Process preposition. If not correct (...leniency...) return hint.
+   *    c) Process keyword 2. If not an item, or more than one, return.
+   *    d) Process verb with item 1 and item 2.
+   * </pre>
+   * 
+   * @param command
+   * @return
    */
-  @PostConstruct
-  public void init() {
-    this.whoPattern = Pattern.compile(messages.get("command.list.meta.who"));
-    this.versionPattern = Pattern.compile(messages.get("command.list.meta.version"));
-    this.inventoryPattern = Pattern.compile(messages.get("command.list.meta.inventory"));
-    this.directionPatternN = Pattern.compile(messages.get("command.list.directions.n"));
-    this.directionPatternS = Pattern.compile(messages.get("command.list.directions.s"));
-    this.directionPatternW = Pattern.compile(messages.get("command.list.directions.w"));
-    this.directionPatternE = Pattern.compile(messages.get("command.list.directions.e"));
-    this.directionPatternU = Pattern.compile(messages.get("command.list.directions.u"));
-    this.directionPatternD = Pattern.compile(messages.get("command.list.directions.d"));
-    this.iActionPattern = Pattern.compile(messages.get("command.list.intransitive"));
-    this.tActionPattern = Pattern.compile(messages.get("command.list.transitive"));
-    this.pickupPattern = Pattern.compile(messages.get("command.list.transitive.pickup"));
-    this.putdownPattern = Pattern.compile(messages.get("command.list.transitive.putdown"));
-  }
-
-  private Pattern whoPattern;
-  private Pattern versionPattern;
-  private Pattern inventoryPattern;
-  private Pattern directionPatternN;
-  private Pattern directionPatternS;
-  private Pattern directionPatternW;
-  private Pattern directionPatternE;
-  private Pattern directionPatternU;
-  private Pattern directionPatternD;
-  private Pattern iActionPattern;
-  private Pattern tActionPattern;
-  private Pattern pickupPattern;
-  private Pattern putdownPattern;
-
   public String match(String command) {
 
-    // If command is empty, it could be the first room.
     final GameState state = gameService.getCurrentState();
-    if (Constants.ROOM_DEFAULT.equals(state.getCurrentRoom().getCode())) {
-      return this.advanceRoom(state, Directions.U);
+
+    // Case 0: if command is empty and room is initial, go up.
+    if (StringUtils.isEmpty(command) && state.getCurrentRoom().getCode().equals(Constants.ROOM_DEFAULT))
+      return gameService.goToDirection(state, Directions.U);
+
+    final Matcher verbMatcher = Pattern.compile(messages.get("command.list")).matcher(command);
+
+    // If no verb, return.
+    if (!verbMatcher.matches()) {
+      return randomizer.rollString(messages.get(Constants.COMMAND_REFUSED));
     }
 
-    // Whois
-    if (whoPattern.matcher(command).matches()) {
-      return gameService.doIntransitiveCommand(whoPattern.matcher(command).group());
+    final Matcher articleMatcher = Pattern.compile(messages.get("command.articles")).matcher(command);
+    final Matcher prepositionMatcher = Pattern.compile(messages.get("command.prepositions")).matcher(command);
+
+    final String verb = verbMatcher.group();
+
+    // Directions
+    final Matcher directionsMatcher = Pattern.compile(messages.get("command.list.directions")).matcher(verb);
+    if (directionsMatcher.matches()) {
+      return this.goToDirection(state, directionsMatcher.group());
+    }
+
+    // About
+    if (Arrays.asList(messages.get("command.list.meta.who").split(Constants.SEPARATOR_OPTION)).contains(verb)) {
+      return messages.get("reverie.gui.game.about");
     }
 
     // Version
-    if (versionPattern.matcher(command).matches()) {
-      return gameService.doIntransitiveCommand(versionPattern.matcher(command).group());
+    if (Arrays.asList(messages.get("command.list.meta.version").split(Constants.SEPARATOR_OPTION)).contains(verb)) {
+      return String.format("%s %s", messages.get("reverie.version"), messages.get("reverie.gui.title"));
     }
 
     // Inventory
-    if (inventoryPattern.matcher(command).matches()) {
-      return gameService.doIntransitiveCommand(inventoryPattern.matcher(command).group());
+    if (Arrays.asList(messages.get("command.list.meta.inventory").split(Constants.SEPARATOR_OPTION)).contains(verb)) {
+      return pcService.getInventoryText(state.getPlayerCharacter());
     }
 
-    // Direction commands
-    if (directionPatternN.matcher(command).matches()) {
-      return advanceRoom(state, Directions.N);
+    // Intransitive-generic
+    if (Arrays.asList(messages.get("command.list.intransitive").split(Constants.SEPARATOR_OPTION)).contains(verb)) {
+      return gameService.doIntransitiveCommand(verb);
     }
 
-    if (directionPatternS.matcher(command).matches()) {
-      return advanceRoom(state, Directions.S);
-    }
+    // TODO continue implementation of matcher
 
-    if (directionPatternW.matcher(command).matches()) {
-      return advanceRoom(state, Directions.W);
-    }
+    // From this point on, we need at least an object.
+    final String commandObjectKeyword = command.substring(
+            articleMatcher.matches() ? articleMatcher.end() : verbMatcher.end(),
+            prepositionMatcher.matches() ? prepositionMatcher.start() : command.length()).trim();
+    final String commandComplement = prepositionMatcher.matches() ? command.substring(prepositionMatcher.end(),
+            command.length()).trim() : null;
 
-    if (directionPatternE.matcher(command).matches()) {
-      return advanceRoom(state, Directions.E);
-    }
-
-    if (directionPatternU.matcher(command).matches()) {
-      return advanceRoom(state, Directions.U);
-    }
-
-    if (directionPatternD.matcher(command).matches()) {
-      return advanceRoom(state, Directions.D);
-    }
-
-    // Pickup commands
-    final Matcher pickupMatcher = pickupPattern.matcher(command);
-    if (pickupMatcher.matches()) {
-      if (!StringUtils.isEmpty(command.substring(pickupMatcher.end(), command.length())))
-        return doPickupCommand(state, command.substring(pickupMatcher.end(), command.length()));
-      else
-        return randomizer.rollString(messages.get("command.refused.transitive"), command.trim());
-    }
-
-    // Put down commands
-    final Matcher putdownMatcher = putdownPattern.matcher(command);
-    if (putdownMatcher.matches()) {
-      if (!StringUtils.isEmpty(command.substring(putdownMatcher.end(), command.length())))
-        return doPutdownCommand(state, command.substring(putdownMatcher.end(), command.length()));
-      else
-        return randomizer.rollString(messages.get("command.refused.transitive"), command.trim());
-    }
-
-    // Intransitive action commands
-    if (iActionPattern.matcher(command).matches()) {
-      return gameService.doIntransitiveCommand(iActionPattern.matcher(command).group());
-    }
-
-    // Transitive action commands
-    final Matcher tActionMatcher = tActionPattern.matcher(command);
-
-    final boolean hasAction = tActionMatcher.find();
-    // TODO still trim articles!
-    final boolean hasItem = hasAction && command.trim().length() > tActionMatcher.end(); // Meaning there's more than an action here.
-
-    if (hasAction && hasItem) {
-      return doOtherTransitiveCommand(state, tActionMatcher.group(),
-              command.substring(tActionMatcher.end(), command.length()).trim());
-    } else if (hasAction) {
-      return randomizer.rollString(messages.get("command.refused.transitive"), command.trim());
-    }
-
-    return randomizer.rollString(messages.get("command.refused"));
-  }
-
-  private String doPutdownCommand(final GameState state, final String keywords) {
-    final List<Item> items = itemService.narrowToPresent(state, itemService.findByKeywords(keywords));
-    Item item = null;
-    if (items.isEmpty()) {
-      return randomizer.rollString(messages.get("items.command.refused.unfound"), keywords);
-    } else if (items.size() == 1) {
-      item = items.get(0);
+    final List<Item> commandObjectItems = itemService.narrowToPresent(state,
+            itemService.findByKeywords(commandObjectKeyword));
+    Item commandObject = null;
+    if (commandObjectItems.isEmpty()) {
+      return randomizer.rollString(messages.get("items.command.refused.unfound"), commandObjectKeyword);
+    } else if (commandObjectItems.size() == 1) {
+      commandObject = commandObjectItems.get(0);
     } else {
-      return this.disambiguateItems(items);
+      return this.disambiguateItems(commandObjectItems);
     }
 
-    return gameService.dropItem(item);
-  }
-
-  /**
-   * Execute a pickup command.
-   * 
-   * @param state
-   * @param keywords
-   * @return
-   */
-  private String doPickupCommand(final GameState state, final String keywords) {
-    final List<Item> items = itemService.narrowToPresent(state, itemService.findByKeywords(keywords));
-    Item item = null;
-    if (items.isEmpty()) {
-      return randomizer.rollString(messages.get("items.command.refused.unfound"), keywords);
-    } else if (items.size() == 1) {
-      item = items.get(0);
-    } else {
-      return this.disambiguateItems(items);
-    }
-
-    return gameService.pickupItem(item);
+    return randomizer.rollString(messages.get(Constants.COMMAND_REFUSED));
   }
 
   /**
@@ -313,14 +243,35 @@ public class CommandMatcher {
 
   /**
    * @param state
-   * @param dir
+   * @param string
    * @return
    */
-  private String advanceRoom(final GameState state, Directions dir) {
-    if (gameService.tryAdvanceRoom(state, dir)) {
-      return messages.get(Constants.COMMAND_ACCEPTED);
-    } else {
-      return messages.get("command.refused.direction");
-    }
+  private String goToDirection(final GameState state, final String directionKeyword) {
+
+    if (Arrays.asList(messages.get("command.list.directions.n").split(Constants.SEPARATOR_OPTION)).contains(
+            directionKeyword))
+      return gameService.goToDirection(state, Directions.N);
+
+    if (Arrays.asList(messages.get("command.list.directions.s").split(Constants.SEPARATOR_OPTION)).contains(
+            directionKeyword))
+      return gameService.goToDirection(state, Directions.S);
+
+    if (Arrays.asList(messages.get("command.list.directions.w").split(Constants.SEPARATOR_OPTION)).contains(
+            directionKeyword))
+      return gameService.goToDirection(state, Directions.W);
+
+    if (Arrays.asList(messages.get("command.list.directions.e").split(Constants.SEPARATOR_OPTION)).contains(
+            directionKeyword))
+      return gameService.goToDirection(state, Directions.E);
+
+    if (Arrays.asList(messages.get("command.list.directions.u").split(Constants.SEPARATOR_OPTION)).contains(
+            directionKeyword))
+      return gameService.goToDirection(state, Directions.U);
+
+    if (Arrays.asList(messages.get("command.list.directions.d").split(Constants.SEPARATOR_OPTION)).contains(
+            directionKeyword))
+      return gameService.goToDirection(state, Directions.D);
+
+    return "WARNING: A direction was written in the list of all directions, but not in the lists for single directions!";
   }
 }

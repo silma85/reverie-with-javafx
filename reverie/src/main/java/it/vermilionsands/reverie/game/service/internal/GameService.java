@@ -15,6 +15,8 @@ import it.vermilionsands.reverie.game.repository.GameStateRepository;
 import it.vermilionsands.reverie.gui.MainPaneController;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
@@ -37,6 +39,8 @@ import org.springframework.util.StringUtils;
 public class GameService {
 
   private static final Logger log = LoggerFactory.getLogger(GameService.class);
+
+  private final Set<Room> visitedRooms = new HashSet<Room>();
 
   @Autowired
   private Randomizer randomizer;
@@ -80,7 +84,7 @@ public class GameService {
               .append(messages.get("reverie.gui.intro.d"));
 
       controller.getAdventureText().setText(briefing.toString());
-      controller.getAdventureCommandResponses().setText(messages.get("reverie.gui.command.intro"));
+      controller.getAdventureCommandResponses().setText(messages.get("command.intro"));
 
       this.refreshStatusText(state);
 
@@ -98,50 +102,32 @@ public class GameService {
   }
 
   /**
-   * If false, the direction was invalid.
+   * Try to go in a direction and change room (if not closed) and print a message (if applicable).
    * 
    * @param state
-   * @param dir
+   * @param direction
    * @return
    */
-  public boolean tryAdvanceRoom(GameState state, Directions dir) {
+  public String goToDirection(GameState state, Directions direction) {
 
-    Room current = state.getCurrentRoom();
-
-    switch (dir) {
-    case N:
-      state.setCurrentRoom(state.getCurrentRoom().getNorth());
-      break;
-
-    case S:
-      state.setCurrentRoom(state.getCurrentRoom().getSouth());
-      break;
-
-    case W:
-      state.setCurrentRoom(state.getCurrentRoom().getWest());
-      break;
-
-    case E:
-      state.setCurrentRoom(state.getCurrentRoom().getEast());
-      break;
-
-    case U:
-      state.setCurrentRoom(state.getCurrentRoom().getUp());
-      break;
-
-    case D:
-      state.setCurrentRoom(state.getCurrentRoom().getDown());
-      break;
-    }
-
-    final Room next = state.getCurrentRoom();
+    final Room current = state.getCurrentRoom();
+    final Room next = Directions.getInDirection(current, direction);
 
     if (next != null) {
-      this.advanceRoom(state, next);
-      return true;
+      this.goToRoom(state, next);
+      visitedRooms.add(next);
+
+      final String entering = messages.get(next.getTitle() + ".entering");
+      if (StringUtils.isEmpty(entering) || visitedRooms.contains(next))
+        return messages.get("command.success.default");
+      else
+        return entering;
     } else {
-      state.setCurrentRoom(current);
-      return false;
+      String specificMessage = roomService.paddedSplit(
+              messages.get(current.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX + ".not"), 4)[Directions
+              .indexOf(direction)];
+      return StringUtils.isEmpty(specificMessage) ? randomizer.rollString(messages.get("command.refused.direction"))
+              : specificMessage;
     }
   }
 
@@ -149,7 +135,8 @@ public class GameService {
    * @param state
    * @param next
    */
-  public void advanceRoom(GameState state, final Room next) {
+  public void goToRoom(GameState state, final Room next) {
+    state.setCurrentRoom(next);
     state = gameRepository.save(state);
 
     this.refreshRoomText(next);
@@ -183,8 +170,8 @@ public class GameService {
 
   private void refreshRoomText(Room next) {
     controller.getAdventureText().setText(messages.get(next.getDescription()));
-    controller.getAdventureText().appendText(roomService.getRoomConnectionsText(next));
-    controller.getAdventureText().appendText(roomService.getRoomItemsText(next));
+    controller.getAdventureText().appendText(roomService.getConnectionsText(next));
+    controller.getAdventureText().appendText(roomService.getItemsText(next));
   }
 
   public String pickupItem(final Item item) {
@@ -302,7 +289,7 @@ public class GameService {
     }
 
     for (Room roomFlipped : roomService.listByCodes(item.getTitle() + ".flip.rooms")) {
-      roomService.openRoomDirections(roomFlipped.getCode());
+      roomService.openToDirections(roomFlipped.getCode());
     }
 
     for (Item itemAdded : itemService.listByCodes(item.getTitle() + ".flip.create.room")) {
@@ -320,8 +307,25 @@ public class GameService {
     return item;
   }
 
-  public String doIntransitiveCommand(String group) {
-    // TODO Auto-generated method stub
+  /**
+   * Apply conditions and do an intransitive command, with consequences.
+   * See commands.properties for details
+   * 
+   * @param verb
+   * @return
+   */
+  public String doIntransitiveCommand(final String verb) {
+
+    final String message = messages.get("command." + verb);
+
+    // TODO check conditions first
+
+    // TODO apply actions if conditions are met (and they are if method did not return)
+
+    // Finally, return message
+    if (!StringUtils.isEmpty(message))
+      return randomizer.rollString(message);
+
     return null;
   }
 }

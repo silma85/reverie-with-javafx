@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
  */
 @Entity
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = { "north", "south", "west", "east", "up", "down" })
 public class Room extends RootEntity {
 
   private static final long serialVersionUID = 3124208574523298591L;

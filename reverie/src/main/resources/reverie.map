@@ -1,4 +1,32 @@
+grammar:
+[verb][article?][keyword?][preposition?][keyword?]
+
+I CANNOT identify keywords directly because not all keywords are known beforehand.
+So:
+	a) Keyword 1 is text between verb.end() and preposition start (if any) or command end.
+	b) Keyword 2 is text between preposition end (if any) and command end.
+	c) Trim and try identification.
+
+1) identify all components of a sentence
+	a) verb
+	b) article or nothing
+	c) keyword 1 and/or keyword 2 or nothing
+	d) preposition or nothing
+2) if no verb, return
+3) if unknown verb, return
+3) if verb is direction or intransitive, process it and return result
+4) if verb is transitive
+	a) Process keyword 1. If not an item, or more than one, return.
+	b) If an item, process verb with item 1 and return result
+5) if verb is 3-way
+	a) Process keyword 1. If not an item, or more than one, return.
+	b) Process preposition. If not correct (...leniency...) return hint.
+	c) Process keyword 2. If not an item, or more than one, return.
+	d) Process verb with item 1 and item 2.
+
+==============================================================================
 Construct
+------------------------------------------------------------------------------
 
 	pillar
 	| | | |
@@ -6,6 +34,11 @@ Construct
 		|		| |
 		darkbuilding -- exit [up to floor]
 		(dbtoexit)
+==============================================================================
+
+==============================================================================
+Unassuming dungeons
+------------------------------------------------------------------------------
 		
 					floor [e][w] closet
 					|[n]
@@ -20,4 +53,6 @@ Construct
 							|[s]
 							|[n]
 			back of hut	--	courtyard [e to forest]
+==============================================================================
+
 	

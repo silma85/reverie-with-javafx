@@ -52,8 +52,8 @@ public enum Constants {
   public final static String REVERIE_ICON = "spiral-icon.png";
 
   public final static String COMMAND_ACTION = "command";
-  public final static String COMMAND_ACCEPTED = "reverie.gui.command.success.default";
-  public final static String COMMAND_NOT_FOUND = "reverie.gui.command.unfound";
+  public final static String COMMAND_ACCEPTED = "command.success.default";
+  public final static String COMMAND_REFUSED = "command.refused";
 
   public final static String CREATURE_PLAYER_NAME_PREFIXES = "reverie.creatures.name.prefixes";
   public final static String CREATURE_PLAYER_NAME_SUFFIXES = "reverie.creatures.name.suffixes";

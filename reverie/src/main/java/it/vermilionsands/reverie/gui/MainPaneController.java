@@ -122,7 +122,6 @@ public class MainPaneController {
 
   @FXML
   public void reloadPatternAction(ActionEvent event) {
-    commandResponder.getCommandMatcher().init();
     this.adventureCommandResponses.setText(messages.get("reverie.gui.debug.reload.actions"));
   }
 

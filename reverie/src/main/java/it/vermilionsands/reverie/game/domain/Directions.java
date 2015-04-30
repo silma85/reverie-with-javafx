@@ -3,6 +3,8 @@
  */
 package it.vermilionsands.reverie.game.domain;
 
+import java.util.Arrays;
+
 /**
  * Directions enum.
  * 
@@ -20,6 +22,10 @@ public enum Directions {
 
   public static Directions get(final int index) {
     return Directions.values()[index];
+  }
+
+  public static int indexOf(final Directions direction) {
+    return Arrays.asList(Directions.values()).indexOf(direction);
   }
 
   public static Room getInDirection(final Room room, final Directions direction) {
