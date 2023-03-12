@@ -13,6 +13,7 @@ import javafx.scene.control.TextField;
 import lombok.Getter;
 import lombok.Setter;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +30,7 @@ public class CommandResponder {
   private Randomizer randomizer;
 
   @Autowired
-  private CommandMatcher commandMatcher;
+  private BeanFactory factory;
 
   private TextArea commandReceiver;
 
@@ -60,6 +61,7 @@ public class CommandResponder {
    */
   public void respondToCommand(String command) {
 
+    CommandMatcher commandMatcher = (CommandMatcher) factory.getBean("commandMatcher");
     String response = commandMatcher.match(command);
 
     commandReceiver.setText(response);

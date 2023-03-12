@@ -3,17 +3,6 @@
  */
 package it.vermilionsands.reverie.game.service;
 
-import it.vermilionsands.reverie.configuration.Constants;
-import it.vermilionsands.reverie.configuration.Messages;
-import it.vermilionsands.reverie.game.Randomizer;
-import it.vermilionsands.reverie.game.domain.Directions;
-import it.vermilionsands.reverie.game.domain.GameState;
-import it.vermilionsands.reverie.game.domain.Item;
-import it.vermilionsands.reverie.game.service.internal.GameService;
-import it.vermilionsands.reverie.game.service.internal.ItemService;
-import it.vermilionsands.reverie.game.service.internal.PlayerCharacterService;
-import it.vermilionsands.reverie.game.service.internal.RoomService;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -24,6 +13,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import it.vermilionsands.reverie.configuration.Constants;
+import it.vermilionsands.reverie.configuration.Messages;
+import it.vermilionsands.reverie.game.Randomizer;
+import it.vermilionsands.reverie.game.domain.Directions;
+import it.vermilionsands.reverie.game.domain.GameState;
+import it.vermilionsands.reverie.game.domain.Item;
+import it.vermilionsands.reverie.game.service.internal.GameService;
+import it.vermilionsands.reverie.game.service.internal.ItemService;
+import it.vermilionsands.reverie.game.service.internal.PlayerCharacterService;
 
 /**
  * Command matcher
@@ -47,9 +46,6 @@ public class CommandMatcher {
 
   @Autowired
   private ItemService itemService;
-
-  @Autowired
-  private RoomService roomService;
 
   @Autowired
   private PlayerCharacterService pcService;
@@ -94,7 +90,7 @@ public class CommandMatcher {
     final GameState state = gameService.getCurrentState();
 
     // Case 0: if command is empty and room is initial, go up.
-    if (StringUtils.isEmpty(command) && state.getCurrentRoom().getCode().equals(Constants.ROOM_DEFAULT))
+    if (StringUtils.hasText(command) && state.getCurrentRoom().getCode().equals(Constants.ROOM_DEFAULT))
       return gameService.goToDirection(state, Directions.U);
 
     final Matcher verbMatcher = Pattern.compile(messages.get("command.list")).matcher(command);
@@ -181,7 +177,7 @@ public class CommandMatcher {
     // Return an action- and item-specific description, if any.
     final String actionSpecificMessage = messages.get(item.getTitle() + ".actions." + command
             + (item.isFlipped() ? Constants.ITEM_DESCRIPTION_FLIPPED_SUFFIX : Constants.ITEM_DESCRIPTION_SUFFIX));
-    if (!StringUtils.isEmpty(actionSpecificMessage)) {
+    if (!StringUtils.hasText(actionSpecificMessage)) {
       // TODO more complex execution? Or the facilities in flipactions are already enough?
       return actionSpecificMessage;
     }
@@ -193,9 +189,9 @@ public class CommandMatcher {
       final String alreadyFlippedSpecificMessage = messages.get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX + "."
               + command + ".already");
       final String alreadyFlippedMessage = messages.get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX + ".already");
-      if (!StringUtils.isEmpty(alreadyFlippedSpecificMessage))
+      if (!StringUtils.hasText(alreadyFlippedSpecificMessage))
         return alreadyFlippedSpecificMessage;
-      else if (!StringUtils.isEmpty(alreadyFlippedMessage))
+      else if (!StringUtils.hasText(alreadyFlippedMessage))
         return alreadyFlippedMessage;
       else
         return messages.get("items.flip.already");
@@ -204,7 +200,7 @@ public class CommandMatcher {
     // Validate action.
     if (!actionValid) {
       String specificNoFlip = messages.get(item.getTitle() + ".actions." + command + Constants.ITEM_NOFLIP_SUFFIX);
-      return StringUtils.isEmpty(specificNoFlip) ? messages.get(item.getTitle() + Constants.ITEM_NOFLIP_SUFFIX)
+      return StringUtils.hasText(specificNoFlip) ? messages.get(item.getTitle() + Constants.ITEM_NOFLIP_SUFFIX)
               : specificNoFlip;
     }
 

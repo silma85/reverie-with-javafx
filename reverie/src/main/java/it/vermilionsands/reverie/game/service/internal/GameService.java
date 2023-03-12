@@ -25,6 +25,9 @@ import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -98,7 +101,8 @@ public class GameService {
   }
 
   public GameState getCurrentState() {
-    return gameRepository.findTopByOrderBySaveDateDesc();
+    Page<GameState> page = gameRepository.findAll(PageRequest.of(0, 1, Sort.by(Sort.Order.desc("saveDate"))));
+    return page.stream().findFirst().orElse(null);
   }
 
   /**
@@ -118,7 +122,7 @@ public class GameService {
       visitedRooms.add(next);
 
       final String entering = messages.get(next.getTitle() + ".entering");
-      if (StringUtils.isEmpty(entering) || visitedRooms.contains(next))
+      if (StringUtils.hasText(entering) || visitedRooms.contains(next))
         return messages.get("command.success.default");
       else
         return entering;
@@ -126,7 +130,7 @@ public class GameService {
       String specificMessage = roomService.paddedSplit(
               messages.get(current.getTitle() + Constants.ROOM_NSWE_DESC_SUFFIX + ".not"), 4)[Directions
               .indexOf(direction)];
-      return StringUtils.isEmpty(specificMessage) ? randomizer.rollString(messages.get("command.refused.direction"))
+      return StringUtils.hasText(specificMessage) ? randomizer.rollString(messages.get("command.refused.direction"))
               : specificMessage;
     }
   }
@@ -153,11 +157,11 @@ public class GameService {
     final String ambienceOptions = messages.get(room.getBlock() + ".ambience");
     final String specAmbienceOptions = messages.get(room.getTitle() + ".ambience");
 
-    if (!StringUtils.isEmpty(ambienceOptions) && randomizer.roll(0, 160) > 140) {
+    if (!StringUtils.hasText(ambienceOptions) && randomizer.roll(0, 160) > 140) {
       controller.getAdventureCommandResponses().appendText("\n" + randomizer.rollString(ambienceOptions));
     }
 
-    if (!StringUtils.isEmpty(specAmbienceOptions) && randomizer.roll(0, 160) > 140) {
+    if (!StringUtils.hasText(specAmbienceOptions) && randomizer.roll(0, 160) > 140) {
       controller.getAdventureCommandResponses().appendText("\n" + randomizer.rollString(specAmbienceOptions));
     }
   }
@@ -242,7 +246,7 @@ public class GameService {
 
     // If flipActions is empty, use the whole action list.
     String flipActions = messages.get(item.getTitle() + ".flip.actions");
-    if (StringUtils.isEmpty(flipActions)) {
+    if (StringUtils.hasText(flipActions)) {
       flipActions = messages.get(item.getTitle() + ".actions");
     }
 
@@ -323,7 +327,7 @@ public class GameService {
     // TODO apply actions if conditions are met (and they are if method did not return)
 
     // Finally, return message
-    if (!StringUtils.isEmpty(message))
+    if (!StringUtils.hasText(message))
       return randomizer.rollString(message);
 
     return null;

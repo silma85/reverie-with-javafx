@@ -71,16 +71,16 @@ public class ItemService {
       item.setKeywords(messages.get(itemRootKey + Constants.ITEM_KEYWORDS_SUFFIX));
 
       // If has a no pickup description, it's not pickupable.
-      item.setPickupable(StringUtils.isEmpty(messages.get(itemRootKey + Constants.ITEM_NOPICKUP_SUFFIX)));
+      item.setPickupable(StringUtils.hasText(messages.get(itemRootKey + Constants.ITEM_NOPICKUP_SUFFIX)));
 
-      item.setTangible(StringUtils.isEmpty(messages.get(itemRootKey + Constants.ITEM_TANGIBLE_SUFFIX)));
+      item.setTangible(StringUtils.hasText(messages.get(itemRootKey + Constants.ITEM_TANGIBLE_SUFFIX)));
 
       log.info("Adding item {}...", item);
 
       items.add(item);
     }
 
-    itemRepository.save(items);
+    itemRepository.saveAll(items);
 
     return true;
   }
@@ -105,26 +105,26 @@ public class ItemService {
   public boolean validateCommand(final Item item, final String command, final GameState state) {
 
     // If the action is on the list, it must be validated. 
-    if (!StringUtils.isEmpty(messages.get(item.getTitle() + Constants.ITEM_ACTION_SUFFIX))) {
+    if (!StringUtils.hasText(messages.get(item.getTitle() + Constants.ITEM_ACTION_SUFFIX))) {
       final String[] actionList = messages.get(item.getTitle() + Constants.ITEM_ACTION_SUFFIX).split(
               Constants.SEPARATOR);
       if (Arrays.asList(actionList).contains(command)) {
 
         // Check if global conditions apply (that is, global as long as the action is on the fliplist).
-        if (!StringUtils.isEmpty(this.getValidationKey(item, null, "flipitems"))) {
+        if (!StringUtils.hasText(this.getValidationKey(item, null, "flipitems"))) {
           for (String flipItemCode : this.getValidationKey(item, null, "flipitems").split(Constants.SEPARATOR))
             if (!this.checkFlipped(flipItemCode))
               return false;
         }
 
-        if (!StringUtils.isEmpty(this.getValidationKey(item, null, "inroom"))) {
+        if (!StringUtils.hasText(this.getValidationKey(item, null, "inroom"))) {
           final Room room = state.getCurrentRoom();
           if (!room.getCode().equals(this.getValidationKey(item, null, "inroom"))) {
             return false;
           }
         }
 
-        if (!StringUtils.isEmpty(this.getValidationKey(item, null, "haveitems"))) {
+        if (!StringUtils.hasText(this.getValidationKey(item, null, "haveitems"))) {
           final PlayerCharacter pc = state.getPlayerCharacter();
           for (String haveItem : this.getValidationKey(item, null, "haveitems").split(Constants.SEPARATOR))
             if (!this.checkInInventory(pc, haveItem))
@@ -132,20 +132,20 @@ public class ItemService {
         }
 
         // Check if specific conditions apply.
-        if (!StringUtils.isEmpty(this.getValidationKey(item, command, "flipitems"))) {
+        if (!StringUtils.hasText(this.getValidationKey(item, command, "flipitems"))) {
           for (String flipItemCode : this.getValidationKey(item, command, "flipitems").split(Constants.SEPARATOR))
             if (!this.checkFlipped(flipItemCode))
               return false;
         }
 
-        if (!StringUtils.isEmpty(this.getValidationKey(item, command, "inroom"))) {
+        if (!StringUtils.hasText(this.getValidationKey(item, command, "inroom"))) {
           final Room room = state.getCurrentRoom();
           if (!room.getCode().equals(this.getValidationKey(item, command, "inroom"))) {
             return false;
           }
         }
 
-        if (!StringUtils.isEmpty(this.getValidationKey(item, command, "haveitems"))) {
+        if (!StringUtils.hasText(this.getValidationKey(item, command, "haveitems"))) {
           final PlayerCharacter pc = state.getPlayerCharacter();
           for (String haveItem : this.getValidationKey(item, command, "haveitems").split(Constants.SEPARATOR))
             if (!this.checkInInventory(pc, haveItem))
@@ -185,7 +185,7 @@ public class ItemService {
   public String lookItem(final Item item) {
     final String description = messages.get(item.getDescription());
 
-    if (StringUtils.isEmpty(description)) {
+    if (StringUtils.hasText(description)) {
       return randomizer.rollString(messages.get("items.look.default"), messages.get(item.getTitle()));
     }
 
@@ -196,7 +196,7 @@ public class ItemService {
     Set<Item> items = new HashSet<Item>();
 
     final String createItemsInv = messages.get(codes);
-    if (!StringUtils.isEmpty(createItemsInv)) {
+    if (!StringUtils.hasText(createItemsInv)) {
       for (String itemCode : createItemsInv.split(Constants.SEPARATOR)) {
         final Item item = this.findByCode(itemCode);
         items.add(item);
@@ -233,7 +233,7 @@ public class ItemService {
             .get(item.getTitle() + Constants.ITEM_FLIP_SUFFIX + Constants.ITEM_ACTION_SUFFIX);
     final String actions = messages.get(item.getTitle() + Constants.ITEM_ACTION_SUFFIX);
 
-    if (StringUtils.isEmpty(flipActions))
+    if (StringUtils.hasText(flipActions))
       return Arrays.asList(actions).contains(command);
     else
       return Arrays.asList(flipActions).contains(command);

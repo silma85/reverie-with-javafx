@@ -38,9 +38,6 @@ public class RoomService {
   @Autowired
   private Messages messages;
 
-  @Autowired
-  private GameService gameService;
-
   public Room getStartingRoom() {
     return roomRepository.findByCode(Constants.ROOM_DEFAULT);
   }
@@ -86,7 +83,7 @@ public class RoomService {
     }
 
     // Persist rooms
-    final Iterable<Room> savedRooms = roomRepository.save(roomList);
+    final Iterable<Room> savedRooms = roomRepository.saveAll(roomList);
     this.createRoomConnections(savedRooms);
     this.setItems(savedRooms);
 
@@ -103,7 +100,7 @@ public class RoomService {
       String roomKey = room.getTitle();
 
       String nsweAll = messages.get(roomKey + Constants.ROOM_NSWE_SUFFIX);
-      if (!StringUtils.isEmpty(nsweAll)) {
+      if (!StringUtils.hasText(nsweAll)) {
         String[] nswe = paddedSplit(nsweAll, 4);
         room.setNorth(roomRepository.findByCode(nswe[0]));
         room.setSouth(roomRepository.findByCode(nswe[1]));
@@ -112,7 +109,7 @@ public class RoomService {
       }
 
       String udAll = messages.get(roomKey + Constants.ROOM_UD_SUFFIX);
-      if (!StringUtils.isEmpty(udAll)) {
+      if (!StringUtils.hasText(udAll)) {
         String[] ud = paddedSplit(udAll, 2);
         room.setUp(roomRepository.findByCode(ud[0]));
         room.setDown(roomRepository.findByCode(ud[1]));
@@ -165,10 +162,10 @@ public class RoomService {
     // Check connections.
     for (int i = 0; i < openConnections.length; i++) {
       if (Directions.getInDirection(room, Directions.get(i)) == null) {
-        sb.append(!StringUtils.isEmpty(closedConnections[i]) ? String
+        sb.append(!StringUtils.hasText(closedConnections[i]) ? String
                 .format(closedConnections[i], directionPrefixes[i]) + " " : "");
       } else {
-        sb.append(!StringUtils.isEmpty(openConnections[i]) ? String.format(openConnections[i], directionPrefixes[i])
+        sb.append(!StringUtils.hasText(openConnections[i]) ? String.format(openConnections[i], directionPrefixes[i])
                 + " " : "");
       }
     }
@@ -185,7 +182,7 @@ public class RoomService {
     for (Item item : room.getItems()) {
       final String key = item.isFlipped() ? item.getTitle() + Constants.ITEM_AMBIENCE_FLIPPED_SUFFIX : item.getTitle()
               + Constants.ITEM_AMBIENCE_SUFFIX;
-      final String ambience = StringUtils.isEmpty(messages.get(key)) ? "" : messages.get(key) + "\n";
+      final String ambience = StringUtils.hasText(messages.get(key)) ? "" : messages.get(key) + "\n";
       sb.append(ambience);
     }
 
@@ -239,7 +236,7 @@ public class RoomService {
       roomsToUpdate.add(room);
     }
 
-    roomRepository.save(roomsToUpdate);
+    roomRepository.saveAll(roomsToUpdate);
   }
 
   /**
@@ -288,7 +285,7 @@ public class RoomService {
       roomsToUpdate.add(room);
     }
 
-    roomRepository.save(roomsToUpdate);
+    roomRepository.saveAll(roomsToUpdate);
   }
 
   @Transactional
@@ -298,7 +295,7 @@ public class RoomService {
       final String[] items = messages.get(room.getTitle() + Constants.ROOM_ITEM_SUFFIX).split(Constants.SEPARATOR);
       for (String itemCode : items) {
 
-        if (StringUtils.isEmpty(itemCode)) {
+        if (StringUtils.hasText(itemCode)) {
           log.info("No items on room {}, moving on...", room.getTitle());
           continue;
         }
@@ -330,7 +327,7 @@ public class RoomService {
     List<Room> rooms = new ArrayList<Room>();
 
     final String roomCodes = messages.get(codes);
-    if (!StringUtils.isEmpty(roomCodes)) {
+    if (!StringUtils.hasText(roomCodes)) {
       for (String roomCode : roomCodes.split(Constants.SEPARATOR)) {
         final Room room = roomRepository.findByCode(roomCode);
         rooms.add(room);

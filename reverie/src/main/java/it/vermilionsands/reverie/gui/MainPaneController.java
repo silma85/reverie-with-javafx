@@ -18,6 +18,7 @@ import javax.annotation.PostConstruct;
 
 import lombok.Getter;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -30,17 +31,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class MainPaneController {
 
   @Autowired
-  private CommandResponder commandResponder;
-
-  @Autowired
-  private GameService gameService;
+  private BeanFactory factory;
 
   @Autowired
   private Messages messages;
 
+  private CommandResponder commandResponder;
+
   @PostConstruct
   public void init() {
     // this.adventureText.setText(messages.get("system.debug.message"));
+
+    commandResponder = (CommandResponder) factory.getBean("commandResponder");
 
     this.commandResponder.setCommandReceiver(adventureCommandResponses);
     this.commandResponder.setCommander(adventureCommands);
@@ -127,6 +129,7 @@ public class MainPaneController {
 
   @FXML
   public void reloadObjectsAction(ActionEvent event) {
+    GameService gameService = (GameService) factory.getBean("gameService");
     gameService.init();
     this.adventureCommandResponses.setText(messages.get("reverie.gui.debug.reload.objects"));
   }
